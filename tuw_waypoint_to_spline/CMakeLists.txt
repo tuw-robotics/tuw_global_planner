@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp 
     rospy 
     dynamic_reconfigure 
+    tuw_spline_msgs
 )
 
 find_package(Boost REQUIRED COMPONENTS thread)
@@ -40,6 +41,7 @@ catkin_package(
 )
 
 include_directories(include
+  ${catkin_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
 )

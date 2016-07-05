@@ -34,7 +34,7 @@
 #ifndef TUW_PATH_TO_SPLINE_H
 #define TUW_PATH_TO_SPLINE_H
 
-#include <tuw_teleop/Gui2IwsConfig.h>
+#include <memory>
 #include <unsupported/Eigen/Splines>
 
 
