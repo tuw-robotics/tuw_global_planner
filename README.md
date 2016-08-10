@@ -11,5 +11,5 @@ converts a point array with chassis orientation into a spline functions with kno
 
 ### arguments examples
 ```
-_global_frame:=map path:=/global_planner/planner/plan __ns:=blue
+_global_frame:=map _waypoints_distance:=0.5 path:=/global_planner/planner/plan __ns:=blue
 ```
