@@ -34,7 +34,9 @@
 #include <tuw_waypoint_to_spline/tuw_waypoint_to_spline_node.h>
 
 #include <iostream>
+#include <fstream>
 #include <vector>
+#include "yaml-cpp/yaml.h"
 
 using namespace tuw;
 using namespace std;
@@ -43,17 +45,15 @@ int main ( int argc, char **argv ) {
 
     ros::init ( argc, argv, "tuw_waypoint_to_spline" );  /// initializes the ros node with default name
     ros::NodeHandle n;
-    
-    ros::Rate r(5);
-    Waypoint2SplineNode waypoint2SplineNode ( n );
+
+    ros::Rate r ( 5 );
+    Waypoint2SplineNode node ( n );
     r.sleep();
-	
-    waypoint2SplineNode.fitSpline();
-    waypoint2SplineNode.compTime = ros::Time::now();
-    
+
+
     while ( ros::ok() ) {
-	
-        waypoint2SplineNode.publishSplineParam();
+
+        node.publishSpline();
 
         /// calls all callbacks waiting in the queue
         ros::spinOnce();
@@ -68,25 +68,23 @@ int main ( int argc, char **argv ) {
  * Constructor
  **/
 Waypoint2SplineNode::Waypoint2SplineNode ( ros::NodeHandle & n )
-    : Waypoint2Spline(), 
-    n_ ( n ), 
-    n_param_ ( "~" ){
-	
-     n_param_.getParam("global_frame", global_frame_id);
-	
-    size_t i = 0;
-    vector< vector<double> > inputData(1, vector<double>(0,0));
-    while( n_param_.getParam("pt_array_dim" + to_string(i), inputData[i] ) ) { inputData.resize(inputData.size()+1); i++; }
-    inputData.resize(inputData.size()-1);
-    
-    dataPts_ = Eigen::MatrixXd ( 3, inputData[0].size() );
-    for(size_t k = 0; k < 3; ++k) {
-	for(size_t l = 0; l < inputData[0].size(); ++l) {
-	    dataPts_(k,l) = inputData[k][l];
-	}
+    : Waypoint2Spline(),
+      n_ ( n ),
+      n_param_ ( "~" ) {
+
+    n_param_.param<std::string>( "global_frame", global_frame_id_, "map" );
+    std::string path_file;
+    n_param_.getParam( "path_file", path_file);
+    n_param_.param<double>( "waypoints_distance", waypoints_distance_, 0.5);
+    n_param_.param<string>( "path_tmp_file", path_tmp_file_, "/tmp/waypoints_to_spline.yml");
+    spline_msg_.header.seq = 0;
+    if(!path_file.empty()) {
+      constructSplineFromFile(path_file);
     }
-    pubSplineData_    = n.advertise<tuw_spline_msgs::Spline>("path_spline"  , 1);
-    
+
+    pubSplineData_    = n.advertise<tuw_spline_msgs::Spline> ( "path_spline"  , 1 );
+    sub_path_ = n.subscribe ( "path", 1, &Waypoint2SplineNode::callbackPath, this );
+
 //     reconfigureFnc_ = boost::bind ( &Gui2IwsNode::callbackConfigBlueControl, this,  _1, _2 );
 //     reconfigureServer_.setCallback ( reconfigureFnc_ );
 }
@@ -97,26 +95,86 @@ Waypoint2SplineNode::Waypoint2SplineNode ( ros::NodeHandle & n )
 //     init();
 // }
 
+void Waypoint2SplineNode::constructSplineFromFile (const std::string &file) {
 
-void Waypoint2SplineNode::publishSplineParam() {
-    
-    
+    YAML::Node waypoints_yaml = YAML::LoadFile(file);
+    points_[0] = waypoints_yaml["x"].as<std::vector<double> >();
+    points_[1] = waypoints_yaml["y"].as<std::vector<double> >();
+    points_[2] = waypoints_yaml["o"].as<std::vector<double> >();
+
+    size_t N = points_[0].size();
+    if ( ( N > 0 ) && ( points_[0].size() == N ) && ( points_[1].size() == N ) && ( points_[2].size() == N ) ) {
+        ROS_INFO ( "constructSplineFromParam!" );
+
+        sleep ( 1 ); // the sleep was needed
+
+        spline_msg_ = constructSplineMsg ();
+        spline_msg_.header.frame_id = global_frame_id_;
+        spline_msg_.header.stamp = ros::Time::now();
+        spline_msg_.header.seq = spline_msg_.header.seq + 1;
+    }
+}
+
+
+void Waypoint2SplineNode::callbackPath ( const nav_msgs::Path &msg ) {
+
+    size_t N = msg.poses.size();
+    for ( int i = 0; i < 3; i++ ) {
+        points_[i].clear();
+        points_[i].reserve ( N );
+    }
+    for ( size_t i = 0; i < N; i++ ) {
+        const geometry_msgs::Pose &pose =  msg.poses[i].pose;
+        if (( i > 0 ) && (i < (N-1))){
+            double dx = points_[0].back() - pose.position.x;
+            double dy = points_[1].back() - pose.position.y;
+            double d = sqrt ( dx*dx+dy*dy );
+            if ( d < waypoints_distance_ ) continue;
+        }
+        points_[0].push_back ( pose.position.x );
+        points_[1].push_back ( pose.position.y );
+        points_[2].push_back ( 0 );
+    }
+    if(!path_tmp_file_.empty()) {
+      YAML::Node waypoints_yaml;
+      waypoints_yaml["x"] = points_[0];
+      waypoints_yaml["y"] = points_[1];
+      waypoints_yaml["o"] = points_[2];
+      std::ofstream fout(path_tmp_file_.c_str());
+      fout << waypoints_yaml;
+      ROS_INFO ("%s: %s","crated waypoint file: ", path_tmp_file_.c_str());
+    }
+    spline_msg_ = constructSplineMsg ();
+    spline_msg_.header.frame_id = msg.header.frame_id;
+    spline_msg_.header.stamp = msg.header.stamp;
+    spline_msg_.header.seq = spline_msg_.header.seq + 1;
+
+}
+
+tuw_spline_msgs::Spline Waypoint2SplineNode::constructSplineMsg ( ) {
+
+    fitSpline();
     Eigen::MatrixXd vKnots = spline_->knots();
     Eigen::MatrixXd mCtrls = spline_->ctrls();
-    
-    tuw_spline_msgs::Spline ss;
-    ss.header.stamp = compTime;
-    ss.header.frame_id = global_frame_id;
-    ss.knots.resize(vKnots.cols());
-    for( int i = 0; i < vKnots.cols(); ++i) { 
-	ss.knots[i] = vKnots(i); 
+
+    tuw_spline_msgs::Spline spline;
+    spline.header.seq = 0;
+    spline.knots.resize ( vKnots.cols() );
+    for ( int i = 0; i < vKnots.cols(); ++i ) {
+        spline.knots[i] = vKnots ( i );
     }
-    ss.ctrls.resize(mCtrls.rows());
-    for( int i = 0; i < mCtrls.rows(); ++i) { 
-	ss.ctrls[i].val.resize(mCtrls.cols());
-	for( int j = 0; j < mCtrls.cols(); ++j) { 
-	    ss.ctrls[i].val[j] = mCtrls(i,j); 
-	}
+    spline.ctrls.resize ( mCtrls.rows() );
+    for ( int i = 0; i < mCtrls.rows(); ++i ) {
+        spline.ctrls[i].val.resize ( mCtrls.cols() );
+        for ( int j = 0; j < mCtrls.cols(); ++j ) {
+            spline.ctrls[i].val[j] = mCtrls ( i,j );
+        }
     }
-    pubSplineData_.publish(ss);
+    return spline;
+}
+void Waypoint2SplineNode::publishSpline() {
+
+    if ( spline_msg_.header.seq > 0 ) {
+        pubSplineData_.publish ( spline_msg_ );
+    }
 }

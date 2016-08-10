@@ -40,6 +40,7 @@
 #include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
 #include <tuw_spline_msgs/Spline.h>
+#include <nav_msgs/Path.h>
 
 namespace tuw {
 /**
@@ -48,17 +49,24 @@ namespace tuw {
 class Waypoint2SplineNode : public Waypoint2Spline {
 public:
     Waypoint2SplineNode ( ros::NodeHandle & n ); /// Constructor
-    void publishSplineParam ();
-    ros::Time compTime;
+    void publishSpline ();
 private:
     ros::NodeHandle n_;         /// node handler to the root node
     ros::NodeHandle n_param_;   /// node handler to the current node
     ros::Publisher  pubSplineData_;    /// publisher for the motion commands
+    ros::Subscriber sub_path_; /// Subscriber to the laser measurements
+    ros::Subscriber sub_path; /// Subscriber to the laser measurements
     
-    std::string global_frame_id;
+    std::string global_frame_id_;
+    tuw_spline_msgs::Spline spline_msg_;
+    double waypoints_distance_;
+    std::string path_tmp_file_;
     
 //     dynamic_reconfigure::Server<tuw_path_to_spline::Path2SplineNodeConfig> reconfigureServer_; /// parameter server stuff
 //     dynamic_reconfigure::Server<tuw_path_to_spline::Path2SplineNodeConfig>::CallbackType reconfigureFnc_;  /// parameter server stuff
+    void callbackPath ( const nav_msgs::Path& );   /// callback function to execute on path msg
+    void constructSplineFromFile (const std::string &file);    
+    tuw_spline_msgs::Spline constructSplineMsg ();    
 };
 
 }

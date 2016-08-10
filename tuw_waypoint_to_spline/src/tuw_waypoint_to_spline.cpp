@@ -39,14 +39,26 @@ using namespace tuw;
 using namespace std;
 
 void Waypoint2Spline::fitSpline() {
-    int knotsSize = dataPts_.cols();
-    Eigen::MatrixXd dataPtsXY( 2, knotsSize );
-    for ( int i = 0; i < 2; ++i ) {  for ( int j = 0; j < knotsSize; ++j ) { dataPtsXY(i,j) = dataPts_(i,j); } }
-    
+
+    Eigen::MatrixXd dataPts( 3, points_[0].size() );
+    for ( size_t l = 0; l < points_[0].size(); ++l ) {
+        dataPts ( 0,l ) = points_[0][l];
+        dataPts ( 1,l ) = points_[1][l];
+        dataPts ( 2,l ) = points_[2][l];
+    }
+
+    int knotsSize = dataPts.cols();
+    Eigen::MatrixXd dataPtsXY ( 2, knotsSize );
+    for ( int i = 0; i < 2; ++i ) {
+        for ( int j = 0; j < knotsSize; ++j ) {
+            dataPtsXY ( i,j ) = dataPts ( i,j );
+        }
+    }
+
     Spline3d::KnotVectorType knots;
-    Eigen::ChordLengths(dataPts_, knots);
-    
-    spline_ = make_shared<Spline3d>( SplineFitting< Spline3d >::Interpolate(  dataPts_, DenseIndex( std::min<int>( knotsSize - 1, 3) ), knots ) ); 
+    Eigen::ChordLengths ( dataPts, knots );
+
+    spline_ = make_shared<Spline3d> ( SplineFitting< Spline3d >::Interpolate ( dataPts, DenseIndex ( std::min<int> ( knotsSize - 1, 3 ) ), knots ) );
 }
 
 

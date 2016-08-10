@@ -21,6 +21,7 @@ endif(CMAKE_BUILD_TYPE MATCHES Debug)
 find_package(catkin REQUIRED COMPONENTS 
     roscpp 
     rospy 
+    nav_msgs 
     dynamic_reconfigure 
     tuw_spline_msgs
 )
@@ -50,10 +51,10 @@ include_directories(include
 add_library ( tuw_waypoint_to_spline 
   src/tuw_waypoint_to_spline.cpp 
 )
-target_link_libraries( tuw_waypoint_to_spline ${catkin_LIBRARIES} )
+target_link_libraries( tuw_waypoint_to_spline ${catkin_LIBRARIES})
 
 add_executable       ( tuw_waypoint_to_spline_node src/tuw_waypoint_to_spline_node.cpp )
-target_link_libraries( tuw_waypoint_to_spline_node tuw_waypoint_to_spline ${catkin_LIBRARIES} ${Boost_LIBRARIES}  )
+target_link_libraries( tuw_waypoint_to_spline_node tuw_waypoint_to_spline ${catkin_LIBRARIES} ${Boost_LIBRARIES}  yaml-cpp )
 
 
 install(TARGETS 

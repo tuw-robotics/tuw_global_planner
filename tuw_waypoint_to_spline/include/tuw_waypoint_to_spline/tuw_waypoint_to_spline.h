@@ -44,7 +44,7 @@ class Waypoint2Spline {
     public   : void fitSpline (); 
     protected: std::shared_ptr<Eigen::Spline3d> spline_;
     protected: std::shared_ptr<Eigen::Spline2d> splineXY_;
-    protected: Eigen::MatrixXd dataPts_;
+    protected: std::vector<double> points_[3];
 };
     
 }
