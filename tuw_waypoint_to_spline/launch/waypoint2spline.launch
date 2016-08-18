@@ -7,7 +7,7 @@
   <group ns="$(arg robot_name)">
     <node pkg="tuw_waypoint_to_spline" type="tuw_waypoint_to_spline_node" name="tuw_waypoint_to_spline_node" output="screen">
         <param name="global_frame" value="$(arg global_frame_id)" />
-        <param name="path_file" value="$(arg file_name)" />
+        <param name="path_file" value="$(find tuw_waypoint_to_spline)/cfg/$(arg file_name)" />
         <remap from="path" to="/global_planner/planner/plan" />
     </node>
   </group>
