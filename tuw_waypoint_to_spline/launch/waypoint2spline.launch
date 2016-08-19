@@ -1,13 +1,13 @@
 <launch>
 
   <arg name="robot_name"      default="blue" />
-  <arg name="global_frame_id" default="$(arg robot_name)/odom" />
-  <arg name="file_name"       default="" />
+  <arg name="global_frame_id" default="map" />
+  <arg name="path_file"       default="$(find tuw_waypoint_to_spline)/cfg/route1_x1y0a0.yaml" />
   
   <group ns="$(arg robot_name)">
     <node pkg="tuw_waypoint_to_spline" type="tuw_waypoint_to_spline_node" name="tuw_waypoint_to_spline_node" output="screen">
         <param name="global_frame" value="$(arg global_frame_id)" />
-        <param name="path_file" value="$(arg file_name)" />
+        <param name="path_file" value="$(arg path_file)" />
         <remap from="path" to="/global_planner/planner/plan" />
     </node>
   </group>

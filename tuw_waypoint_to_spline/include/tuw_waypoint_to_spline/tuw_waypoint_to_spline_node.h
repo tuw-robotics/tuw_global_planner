@@ -61,6 +61,7 @@ private:
     tuw_spline_msgs::Spline spline_msg_;
     double waypoints_distance_;
     std::string path_tmp_file_;
+    int minimum_number_of_points_;
     
 //     dynamic_reconfigure::Server<tuw_path_to_spline::Path2SplineNodeConfig> reconfigureServer_; /// parameter server stuff
 //     dynamic_reconfigure::Server<tuw_path_to_spline::Path2SplineNodeConfig>::CallbackType reconfigureFnc_;  /// parameter server stuff

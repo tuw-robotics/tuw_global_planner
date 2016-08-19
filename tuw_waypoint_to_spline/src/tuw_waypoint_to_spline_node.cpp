@@ -75,6 +75,7 @@ Waypoint2SplineNode::Waypoint2SplineNode ( ros::NodeHandle & n )
     n_param_.param<std::string>( "global_frame", global_frame_id_, "map" );
     std::string path_file;
     n_param_.getParam( "path_file", path_file);
+    n_param_.param<int>("minimum_number_of_points", minimum_number_of_points_, 5);
     n_param_.param<double>( "waypoints_distance", waypoints_distance_, 0.5);
     n_param_.param<string>( "path_tmp_file", path_tmp_file_, "/tmp/waypoints_to_spline.yaml");
     spline_msg_.header.seq = 0;
@@ -97,14 +98,19 @@ Waypoint2SplineNode::Waypoint2SplineNode ( ros::NodeHandle & n )
 
 void Waypoint2SplineNode::constructSplineFromFile (const std::string &file) {
 
+    ROS_INFO ( "constructSplineFromFile: %s",  file.c_str());
     YAML::Node waypoints_yaml = YAML::LoadFile(file);
     points_[0] = waypoints_yaml["x"].as<std::vector<double> >();
     points_[1] = waypoints_yaml["y"].as<std::vector<double> >();
     points_[2] = waypoints_yaml["o"].as<std::vector<double> >();
 
     size_t N = points_[0].size();
+    ROS_INFO ( "The file contained: %zu points",  N);
+    if(N < (size_t) minimum_number_of_points_) {
+        ROS_ERROR ( "The file must contain at least: %i points",  minimum_number_of_points_);
+        return;
+    }
     if ( ( N > 0 ) && ( points_[0].size() == N ) && ( points_[1].size() == N ) && ( points_[2].size() == N ) ) {
-        ROS_INFO ( "constructSplineFromParam!" );
 
         sleep ( 1 ); // the sleep was needed
 
@@ -118,14 +124,14 @@ void Waypoint2SplineNode::constructSplineFromFile (const std::string &file) {
 
 void Waypoint2SplineNode::callbackPath ( const nav_msgs::Path &msg ) {
 
-    size_t N = msg.poses.size();
+    ROS_INFO ( "constructSplineFromPath");
     for ( int i = 0; i < 3; i++ ) {
         points_[i].clear();
-        points_[i].reserve ( N );
+        points_[i].reserve ( msg.poses.size() );
     }
-    for ( size_t i = 0; i < N; i++ ) {
+    for ( size_t i = 0; i < msg.poses.size(); i++ ) {
         const geometry_msgs::Pose &pose =  msg.poses[i].pose;
-        if (( i > 0 ) && (i < (N-1))){
+        if (( i > 0 ) && (i < (msg.poses.size()-1))){
             double dx = points_[0].back() - pose.position.x;
             double dy = points_[1].back() - pose.position.y;
             double d = sqrt ( dx*dx+dy*dy );
@@ -143,6 +149,12 @@ void Waypoint2SplineNode::callbackPath ( const nav_msgs::Path &msg ) {
       std::ofstream fout(path_tmp_file_.c_str());
       fout << waypoints_yaml;
       ROS_INFO ("%s: %s","crated waypoint file: ", path_tmp_file_.c_str());
+    }
+    size_t N = points_[0].size();
+    ROS_INFO ( "The path contained: %zu points",  N);
+    if(N < (size_t) minimum_number_of_points_) {
+        ROS_ERROR ( "The file must contain at least: %i points",  minimum_number_of_points_);
+        return;
     }
     spline_msg_ = constructSplineMsg ();
     spline_msg_.header.frame_id = msg.header.frame_id;
