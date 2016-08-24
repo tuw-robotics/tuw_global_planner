@@ -107,7 +107,7 @@ void Waypoint2SplineNode::constructSplineFromFile (const std::string &file) {
     size_t N = points_[0].size();
     ROS_INFO ( "The file contained: %zu points",  N);
     if(N < (size_t) minimum_number_of_points_) {
-        ROS_ERROR ( "The file must contain at least: %i points",  minimum_number_of_points_);
+        ROS_ERROR ( "The path must contain at least: %i points",  minimum_number_of_points_);
         return;
     }
     if ( ( N > 0 ) && ( points_[0].size() == N ) && ( points_[1].size() == N ) && ( points_[2].size() == N ) ) {
@@ -153,7 +153,7 @@ void Waypoint2SplineNode::callbackPath ( const nav_msgs::Path &msg ) {
     size_t N = points_[0].size();
     ROS_INFO ( "The path contained: %zu points",  N);
     if(N < (size_t) minimum_number_of_points_) {
-        ROS_ERROR ( "The file must contain at least: %i points",  minimum_number_of_points_);
+        ROS_ERROR ( "The path must contain at least: %i points",  minimum_number_of_points_);
         return;
     }
     spline_msg_ = constructSplineMsg ();
