@@ -9,7 +9,7 @@
     <node pkg="tuw_waypoint_to_spline" type="tuw_waypoint_to_spline_node" name="tuw_waypoint_to_spline_node" output="screen">
         <param name="global_frame" value="$(arg global_frame_id)" />
         <param name="path_file" value="$(arg path_file)" />
-        <remap from="path" to="/global_planner/planner/plan" />
+        <remap from="path" to="global_planner/planner/plan" />
     </node>
   </group>
 </launch>

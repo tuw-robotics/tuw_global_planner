@@ -83,7 +83,7 @@ Waypoint2SplineNode::Waypoint2SplineNode ( ros::NodeHandle & n )
       constructSplineFromFile(path_file);
     }
 
-    pubSplineData_    = n.advertise<tuw_spline_msgs::Spline> ( "path_spline"  , 1 );
+    pubSplineData_    = n.advertise<tuw_nav_msgs::Spline> ( "path_spline"  , 1 );
     sub_path_ = n.subscribe ( "path", 1, &Waypoint2SplineNode::callbackPath, this );
 
 //     reconfigureFnc_ = boost::bind ( &Gui2IwsNode::callbackConfigBlueControl, this,  _1, _2 );
@@ -163,13 +163,13 @@ void Waypoint2SplineNode::callbackPath ( const nav_msgs::Path &msg ) {
 
 }
 
-tuw_spline_msgs::Spline Waypoint2SplineNode::constructSplineMsg ( ) {
+tuw_nav_msgs::Spline Waypoint2SplineNode::constructSplineMsg ( ) {
 
     fitSpline();
     Eigen::MatrixXd vKnots = spline_->knots();
     Eigen::MatrixXd mCtrls = spline_->ctrls();
 
-    tuw_spline_msgs::Spline spline;
+    tuw_nav_msgs::Spline spline;
     spline.header.seq = 0;
     spline.knots.resize ( vKnots.cols() );
     for ( int i = 0; i < vKnots.cols(); ++i ) {
