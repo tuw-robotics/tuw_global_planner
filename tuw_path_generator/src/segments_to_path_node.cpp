@@ -72,35 +72,35 @@ Segments2Path::Segments2Path ( ros::NodeHandle & n )
     : n_ ( n ),
       n_param_ ( "~" ) {
 
-    n_param_.param<std::string>( "global_frame", global_frame_id_, "map" );
-    n_param_.getParam( "segment_file", segment_file_);
-    n_param_.param<double>( "waypoints_distance", waypoints_distance_, 0.5);
+    n_param_.param<std::string> ( "global_frame", global_frame_id_, "map" );
+    n_param_.getParam ( "segment_file", segment_file_ );
+    n_param_.param<double> ( "waypoints_distance", waypoints_distance_, 0.5 );
     pub_path_   = n.advertise<nav_msgs::Path> ( "path"  , 1 );
     pub_segments_   = n.advertise<tuw_nav_msgs::RouteSegments> ( "segments"  , 1 );
-    if(!segment_file_.empty()) {
-      readSegments(segment_file_);
+    if ( !segment_file_.empty() ) {
+        readSegments ( segment_file_ );
     }
-
+    msg_segments_.header.seq = 0;
 }
 
 
-void Segments2Path::readSegments(const std::string &segment_file) {
-  
-    YAML::Node waypoints_yaml = YAML::LoadFile(segment_file);
-    msg_segments_.set_ids(             waypoints_yaml["id"          ].as<std::vector<unsigned int> >());
-    msg_segments_.set_type(            waypoints_yaml["type"        ].as<std::vector<unsigned int> >());
-    msg_segments_.set_orientation(     waypoints_yaml["orientation" ].as<std::vector<unsigned int> >());
-    msg_segments_.set_motion_type(     waypoints_yaml["motion_type" ].as<std::vector<unsigned int> >());
-    msg_segments_.set_start(           waypoints_yaml["start_x"     ].as<std::vector<double> >(),
-                                       waypoints_yaml["start_y"     ].as<std::vector<double> >(),
-                                       waypoints_yaml["start_theta" ].as<std::vector<double> >() );
-    msg_segments_.set_end(             waypoints_yaml["end_x"       ].as<std::vector<double> >(),
-                                       waypoints_yaml["end_y"       ].as<std::vector<double> >(),
-                                       waypoints_yaml["end_theta"   ].as<std::vector<double> >() );
-    msg_segments_.set_center(          waypoints_yaml["center_x"    ].as<std::vector<double> >(),
-                                       waypoints_yaml["center_y"    ].as<std::vector<double> >(),
-                                       waypoints_yaml["center_theta"].as<std::vector<double> >() );
-    msg_segments_.set_level(           waypoints_yaml["level"       ].as<std::vector<int> >());
+void Segments2Path::readSegments ( const std::string &segment_file ) {
+
+    YAML::Node waypoints_yaml = YAML::LoadFile ( segment_file );
+    msg_segments_.set_ids ( waypoints_yaml["id"          ].as<std::vector<unsigned int> >() );
+    msg_segments_.set_type ( waypoints_yaml["type"        ].as<std::vector<unsigned int> >() );
+    msg_segments_.set_orientation ( waypoints_yaml["orientation" ].as<std::vector<unsigned int> >() );
+    msg_segments_.set_motion_type ( waypoints_yaml["motion_type" ].as<std::vector<unsigned int> >() );
+    msg_segments_.set_start ( waypoints_yaml["start_x"     ].as<std::vector<double> >(),
+                              waypoints_yaml["start_y"     ].as<std::vector<double> >(),
+                              waypoints_yaml["start_theta" ].as<std::vector<double> >() );
+    msg_segments_.set_end ( waypoints_yaml["end_x"       ].as<std::vector<double> >(),
+                            waypoints_yaml["end_y"       ].as<std::vector<double> >(),
+                            waypoints_yaml["end_theta"   ].as<std::vector<double> >() );
+    msg_segments_.set_center ( waypoints_yaml["center_x"    ].as<std::vector<double> >(),
+                               waypoints_yaml["center_y"    ].as<std::vector<double> >(),
+                               waypoints_yaml["center_theta"].as<std::vector<double> >() );
+    msg_segments_.set_level ( waypoints_yaml["level"       ].as<std::vector<int> >() );
     /*
     points_[1] = waypoints_yaml["orientation"].as<std::vector<double> >();
     points_[2] = waypoints_yaml["start_x"].as<std::vector<double> >();
@@ -113,11 +113,14 @@ void Segments2Path::readSegments(const std::string &segment_file) {
     points_[2] = waypoints_yaml["center_y"].as<std::vector<double> >();
     points_[2] = waypoints_yaml["center_theta"].as<std::vector<double> >();
     */
-    
+    msg_segments_.header.frame_id = global_frame_id_;
+    msg_segments_.header.stamp = ros::Time::now();
+
 }
 
 void Segments2Path::publishPath() {
 }
 void Segments2Path::publishSegments() {
-    pub_segments_.publish((tuw_nav_msgs::RouteSegments&) msg_segments_);
+    pub_segments_.publish ( ( tuw_nav_msgs::RouteSegments& ) msg_segments_ );
+    msg_segments_.header.seq = msg_segments_.header.seq + 1;
 }
