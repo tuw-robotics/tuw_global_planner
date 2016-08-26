@@ -56,9 +56,12 @@ private:
     ros::Publisher pub_path_;       /// publisher for the path waypoints
     ros::Publisher pub_segments_;   /// publisher for the segements
     
+    /// ROS shared parameters
     std::string global_frame_id_;
     double waypoints_distance_;
     std::string segment_file_;
+    bool update_header_timestamp_;
+    
     nav_msgs::Path msg_path_;
     tuw_nav::RouteSegments msg_segments_;
     std::vector<Pose2D> waypoints_;
