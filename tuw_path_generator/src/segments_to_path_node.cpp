@@ -121,6 +121,6 @@ void Segments2Path::publishSegments() {
     if ( update_header_timestamp_ ) {
         msg_segments_.header.stamp = ros::Time::now();
     }
-    pub_segments_.publish ( ( tuw_nav_msgs::RouteSegments& ) msg_segments_ );
+    pub_segments_.publish ( ( tuw_nav_msgs::obj::RouteSegments& ) msg_segments_ );
     msg_segments_.header.seq = msg_segments_.header.seq + 1;
 }

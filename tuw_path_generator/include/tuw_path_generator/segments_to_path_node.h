@@ -39,7 +39,7 @@
 #include <ros/ros.h>
 #include <nav_msgs/Path.h>
 #include <tuw_geometry/pose2d.h>
-#include <tuw_nav/route_segments.h>
+#include <tuw_nav_msgs/route_segments.h>
 
 namespace tuw {
 /**
@@ -60,10 +60,11 @@ private:
     std::string global_frame_id_;
     double waypoints_distance_;
     std::string segment_file_;
+    double sample_distance_;
     bool update_header_timestamp_;
     
     nav_msgs::Path msg_path_;
-    tuw_nav::RouteSegments msg_segments_;
+    tuw_nav_msgs::obj::RouteSegments msg_segments_;
     std::vector<Pose2D> waypoints_;
     void readSegments(const std::string &segment_file);
 };
