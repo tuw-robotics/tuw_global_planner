@@ -64,7 +64,7 @@ private:
     bool update_header_timestamp_;
     
     nav_msgs::Path msg_path_;
-    tuw_nav_msgs::obj::RouteSegments msg_segments_;
+    tuw::ros_msgs::RouteSegments msg_segments_;
     std::vector<Pose2D> waypoints_;
     void readSegments(const std::string &segment_file);
 };
