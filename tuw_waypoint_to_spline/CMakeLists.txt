@@ -23,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
     rospy 
     nav_msgs 
     dynamic_reconfigure 
+    tf
     tuw_spline_msgs
 )
 

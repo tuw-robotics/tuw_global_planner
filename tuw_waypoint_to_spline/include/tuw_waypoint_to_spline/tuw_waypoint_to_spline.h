@@ -45,6 +45,7 @@ class Waypoint2Spline {
     protected: std::shared_ptr<Eigen::Spline3d> spline_;
     protected: std::shared_ptr<Eigen::Spline2d> splineXY_;
     protected: std::vector<double> points_[3];
+    protected: std::vector<double> derivatives_[3];
 };
     
 }

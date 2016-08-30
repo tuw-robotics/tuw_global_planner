@@ -41,6 +41,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <tuw_spline_msgs/Spline.h>
 #include <nav_msgs/Path.h>
+#include <tf/transform_listener.h>
 
 namespace tuw {
 /**
@@ -56,6 +57,8 @@ private:
     ros::Publisher  pubSplineData_;    /// publisher for the motion commands
     ros::Subscriber sub_path_; /// Subscriber to the laser measurements
     ros::Subscriber sub_path; /// Subscriber to the laser measurements
+    
+    private  : tf::TransformListener    tf_listener_;  
     
     std::string global_frame_id_;
     tuw_spline_msgs::Spline spline_msg_;

@@ -49,16 +49,16 @@ void Waypoint2Spline::fitSpline() {
 
     int knotsSize = dataPts.cols();
     Eigen::MatrixXd dataPtsXY ( 2, knotsSize );
+    
     for ( int i = 0; i < 2; ++i ) {
         for ( int j = 0; j < knotsSize; ++j ) {
-            dataPtsXY ( i,j ) = dataPts ( i,j );
+            dataPtsXY   ( i,j ) = dataPts ( i,j );
         }
     }
-
     Spline3d::KnotVectorType knots;
     Eigen::ChordLengths ( dataPts, knots );
-
-    spline_ = make_shared<Spline3d> ( SplineFitting< Spline3d >::Interpolate ( dataPts, DenseIndex ( std::min<int> ( knotsSize - 1, 3 ) ), knots ) );
+    spline_ = make_shared<Spline3d> ( SplineFitting< Spline3d >::Interpolate               ( dataPts, DenseIndex ( std::min<int> ( knotsSize - 1, 3 ) ), knots ) );
 }
+
 
 
