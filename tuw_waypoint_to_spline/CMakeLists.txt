@@ -24,7 +24,7 @@ find_package(catkin REQUIRED COMPONENTS
     nav_msgs 
     dynamic_reconfigure 
     tf
-    tuw_spline_msgs
+    tuw_nav_msgs
 )
 
 find_package(Boost REQUIRED COMPONENTS thread)

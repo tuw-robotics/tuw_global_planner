@@ -1,6 +1,6 @@
 /***************************************************************************
  *   Software License Agreement (BSD License)                              *
- *   Copyright (C) 2015 by Horatiu George Todoran <todorangrg@gmail.com>   *
+ *   Copyright (C) 2016 by Markus Bader <markus.bader@tuwien.ac.at>        *
  *                                                                         *
  *   Redistribution and use in source and binary forms, with or without    *
  *   modification, are permitted provided that the following conditions    *
@@ -31,48 +31,44 @@
  ***************************************************************************/
 
 
-#ifndef TUW_PATH_TO_SPLINE_NODE_H
-#define TUW_PATH_TO_SPLINE_NODE_H
+#ifndef TUW_SEGMENS_TO_PATH_H
+#define TUW_SEGMENS_TO_PATH_H
 
-#include <tuw_waypoint_to_spline/tuw_waypoint_to_spline.h>
 
 //ROS
 #include <ros/ros.h>
-#include <dynamic_reconfigure/server.h>
-#include <tuw_nav_msgs/Spline.h>
 #include <nav_msgs/Path.h>
-#include <tf/transform_listener.h>
+#include <tuw_geometry/pose2d.h>
+#include <tuw_nav_msgs/route_segments.h>
 
 namespace tuw {
 /**
  * class to cover the ros communication
  **/
-class Waypoint2SplineNode : public Waypoint2Spline {
+class Segments2Path {
 public:
-    Waypoint2SplineNode ( ros::NodeHandle & n ); /// Constructor
-    void publishSpline ();
+    Segments2Path ( ros::NodeHandle & n ); /// Constructor
+    void publishPath ();
+    void publishSegments ();
 private:
-    ros::NodeHandle n_;         /// node handler to the root node
-    ros::NodeHandle n_param_;   /// node handler to the current node
-    ros::Publisher  pubSplineData_;    /// publisher for the motion commands
-    ros::Subscriber sub_path_; /// Subscriber to the laser measurements
-    ros::Subscriber sub_path; /// Subscriber to the laser measurements
+    ros::NodeHandle n_;             /// node handler to the root node
+    ros::NodeHandle n_param_;       /// node handler to the current node
+    ros::Publisher pub_path_;       /// publisher for the path waypoints
+    ros::Publisher pub_segments_;   /// publisher for the segements
     
-    private  : tf::TransformListener    tf_listener_;  
-    
+    /// ROS shared parameters
     std::string global_frame_id_;
-    tuw_nav_msgs::Spline spline_msg_;
     double waypoints_distance_;
-    std::string path_tmp_file_;
-    int minimum_number_of_points_;
+    std::string segment_file_;
+    double sample_distance_;
+    bool update_header_timestamp_;
     
-//     dynamic_reconfigure::Server<tuw_path_to_spline::Path2SplineNodeConfig> reconfigureServer_; /// parameter server stuff
-//     dynamic_reconfigure::Server<tuw_path_to_spline::Path2SplineNodeConfig>::CallbackType reconfigureFnc_;  /// parameter server stuff
-    void callbackPath ( const nav_msgs::Path& );   /// callback function to execute on path msg
-    void constructSplineFromFile (const std::string &file);    
-    tuw_nav_msgs::Spline constructSplineMsg ();    
+    nav_msgs::Path msg_path_;
+    tuw::ros_msgs::RouteSegments msg_segments_;
+    std::vector<Pose2D> waypoints_;
+    void readSegments(const std::string &segment_file);
 };
 
 }
 
-#endif // TUW_PATH_TO_SPLINE_NODE_H
+#endif // TUW_SEGMENS_TO_PATH_H
