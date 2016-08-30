@@ -84,7 +84,7 @@ Waypoint2SplineNode::Waypoint2SplineNode ( ros::NodeHandle & n )
       constructSplineFromFile(path_file);
     }
 
-    pubSplineData_    = n.advertise<tuw_spline_msgs::Spline> ( "path_spline"  , 1 );
+    pubSplineData_    = n.advertise<tuw_nav_msgs::Spline> ( "path_spline"  , 1 );
     sub_path_ = n.subscribe ( "path", 1, &Waypoint2SplineNode::callbackPath, this );
 
 //     reconfigureFnc_ = boost::bind ( &Gui2IwsNode::callbackConfigBlueControl, this,  _1, _2 );
