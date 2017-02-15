@@ -47,9 +47,9 @@ class Waypoint {
       VALID = 0,
       INVALID = 1
     };
-    public   : static const uint16_t STATE_VISIT = 0;
-    public   : static const uint16_t STATE_ACTIVE = 1;
-    public   : static const uint16_t STATE_AHEAD = 2;
+    public   : static constexpr const uint16_t STATE_VISIT = 0;
+    public   : static constexpr const uint16_t STATE_ACTIVE = 1;
+    public   : static constexpr const uint16_t STATE_AHEAD = 2;
     
     //special class member functions
     public   : Waypoint           ();
