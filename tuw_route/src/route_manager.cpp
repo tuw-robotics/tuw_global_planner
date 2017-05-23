@@ -42,9 +42,9 @@ using namespace std;
 RouteManager:: RouteManager() : routeWaypointSampleDist_(0.5) {
 }
 
-void RouteManager::update ( const Pose2D& _agentPose ) {
+void RouteManager::update ( const Pose2D& _agentPose, const bool& _keepLast ) {
     agentPose_ = _agentPose;
-    updateWaypoints();
+    updateWaypoints(_keepLast);
 }
 
 void RouteManager::loadRoute ( const std::vector< Pose2D >& _pointsSeq ) {
@@ -91,15 +91,15 @@ void RouteManager::loadRoute ( const std::vector< Pose2D >& _pointsSeq ) {
 
 void RouteManager::computeWaypointsDistanceToGoal() {
     double d_prev = 0;
-    if ( waypoints_.size() == 0 ) { return; }
+    if ( waypoints_.size() < 2 ) { return; }
     waypoints_.back().distanceToGoal = 0;
-    for(size_t i = line_segments_.size(); i > 0; i--){
+    for(size_t i = line_segments_.size(); i > 1; i--){
 	waypoints_[i-2].distanceToGoal = d_prev + line_segments_[i-1].length();
 	d_prev += line_segments_[i-1].length();
     }
 }
 
-void RouteManager::updateWaypoints () {
+void RouteManager::updateWaypoints (const bool& _keepLast) {
 
     Pose2D& p0 = agentPose_;
     /// find neraest waypoint
@@ -126,8 +126,8 @@ void RouteManager::updateWaypoints () {
         else{ idx_last_visited = i; }
     }
     if ( waypoints_left > 1 ) {
-        if ( nearest_way_point == size()-1 ) {
-            all_visited();
+        if ( ( nearest_way_point == size()-1 ) ) {
+            if ( !_keepLast ) { all_visited(); }
         } else {
             /// update waypoints state
             if ( distance_to_nearest_waypoint < routeMaxDeviation_ ) {

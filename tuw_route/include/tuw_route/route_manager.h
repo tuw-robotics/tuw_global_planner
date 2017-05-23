@@ -56,7 +56,7 @@ public:
     public   : RouteManager& operator=(RouteManager&&)      = default;
     
     public   : void loadRoute                       (const std::vector<Pose2D>& _pointsSeq);
-    public   : void update                          ( const Pose2D& _agentPose );
+    public   : void update                          ( const Pose2D& _agentPose, const bool& _keepLast = false );
     public   : void computeWaypointsDistanceToGoal  ();
     
     public   : double routeWaypointSampleDist_;
@@ -65,7 +65,7 @@ public:
     public   : double visitedWaypointMinDAngle_;    
 
     /** updates the state of all the loaded waypoints */
-    private  : void updateWaypoints();
+    private  : void updateWaypoints(const bool& _keepLast = false);
     
     private  : Pose2D agentPose_;
 };
