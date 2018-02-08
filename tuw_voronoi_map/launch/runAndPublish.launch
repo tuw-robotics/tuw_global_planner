@@ -1,0 +1,22 @@
+<launch>
+  <arg name="robot_name" default="p3dx" />
+
+  <group ns="$(arg robot_name)">
+  
+    <!-- Launch the grid map tutorial demo node -->
+    <node pkg="tuw_voronoi_map" type="tuw_voronoi_map_node" name="tuw_voronoi_map" output="screen">
+		<param name="gradient_max" value="100"/>
+		<param name="voroni_val" value="-30"/>
+		<param name="map_name" value="voronoi_map"/>
+    </node>
+
+    <!-- Launch the grid map visualizer -->
+    <node pkg="grid_map_visualization" type="grid_map_visualization" name="grid_map_visualization_local" output="screen">
+      <rosparam command="load" file="$(find tuw_voronoi_map)/cfg/gridmap_viz_local_viz.yaml" />
+      <!--rosparam command="load" file="$(find tuw_nav_costmap)/cfg/gridmap_viz_local.yaml" /-->
+      
+    </node>
+    
+  </group>
+
+</launch>

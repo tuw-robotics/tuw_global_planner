@@ -1,0 +1,7 @@
+<launch>
+	<node pkg="tuw_voronoi_map" type="tuw_voronoi_map_node" name="tuw_voronoi_map" output="screen">
+		<param name="gradient_max" value="100"/>
+		<param name="voroni_val" value="-30"/>
+		<param name="map_name" value="voronoi_map"/>
+	</node>
+</launch>
