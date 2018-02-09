@@ -113,7 +113,15 @@ int main(int argc, char** argv) {
 
     global_planner::PlannerWithCostmap pppp("planner", &lcr);
 
-    ros::spin();
+    ros::Rate r(1);
+    
+    while(ros::ok())
+    {
+        ros::spinOnce();
+        r.sleep();
+        pppp.publishVoronoi();
+    }
+    
     return 0;
 }
 

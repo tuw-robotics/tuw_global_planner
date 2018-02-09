@@ -103,9 +103,14 @@ namespace global_planner
                     }
                 }
             }
-            virtual void setNewMap(cv::Mat _map, Eigen::Vector2d _origin, float _resoltuion ) 
-            {}; 
+            virtual void setNewMap ( cv::Mat _map, Eigen::Vector2d _origin, float _resoltuion, int _opt)
+            {};
 
+            virtual void getVoronoi ( cv::Mat &v_map )
+            {
+                cv::Mat m;
+                v_map = m;
+            };
         protected:
             inline int toIndex ( int x, int y )
             {

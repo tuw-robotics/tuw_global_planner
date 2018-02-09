@@ -202,6 +202,7 @@ namespace global_planner
             sub_map_ = private_nh.subscribe ( "/map", 1, &GlobalPlanner::globalMapCallback, this );
             plan_pub_ = private_nh.advertise<nav_msgs::Path> ( "plan", 1 );
             potential_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid> ( "potential", 1 );
+            pub_voronoi_ = private_nh.advertise<nav_msgs::OccupancyGrid> ( "voronoi_map", 1 );
 
             private_nh.param ( "allow_unknown", allow_unknown_, true );
             planner_->setHasUnknown ( allow_unknown_ );
@@ -209,7 +210,12 @@ namespace global_planner
             private_nh.param ( "planner_window_y", planner_window_y_, 0.0 );
             private_nh.param ( "default_tolerance", default_tolerance_, 0.0 );
             private_nh.param ( "publish_scale", publish_scale_, 100 );
-
+            private_nh.param ( "voronoi_optimization", voronoi_optimization_, 7);
+            if(voronoi_optimization_ % 2 == 0 && voronoi_optimization_ > 0)
+            {
+                voronoi_optimization_--;
+            }
+            
             double costmap_pub_freq;
             private_nh.param ( "planner_costmap_publish_frequency", costmap_pub_freq, 0.0 );
 
@@ -238,7 +244,7 @@ namespace global_planner
         cv::Mat map(_map->info.height, _map->info.width, CV_8SC1, mapVec.data());
       
         Eigen::Vector2d origin(_map->info.origin.position.x, _map->info.origin.position.y);
-        planner_->setNewMap(map, origin, _map->info.resolution);
+        planner_->setNewMap(map, origin, _map->info.resolution, voronoi_optimization_);
     }
     void GlobalPlanner::reconfigureCB ( global_planner::GlobalPlannerConfig &config, uint32_t level )
     {
@@ -553,6 +559,45 @@ namespace global_planner
         }
 
         potential_pub_.publish ( grid );
+    }
+    
+    void GlobalPlanner::publishVoronoi ( )
+    {
+        cv::Mat m;
+        planner_->getVoronoi(m);
+        if(m.cols == 0 || m.rows == 0)
+            return;
+        int8_t *voronoi = (int8_t *)m.data;
+        int nx = costmap_->getSizeInCellsX(), ny = costmap_->getSizeInCellsY();
+        double resolution = costmap_->getResolution();
+        nav_msgs::OccupancyGrid grid;
+        // Publish Whole Grid
+        grid.header.frame_id = frame_id_;
+        grid.header.stamp = ros::Time::now();
+        grid.info.resolution = resolution;
+
+        grid.info.width = nx;
+        grid.info.height = ny;
+
+        double wx, wy;
+        costmap_->mapToWorld ( 0, 0, wx, wy );
+        grid.info.origin.position.x = wx - resolution / 2;
+        grid.info.origin.position.y = wy - resolution / 2;
+        grid.info.origin.position.z = 0.0;
+        grid.info.origin.orientation.w = 1.0;
+
+        grid.data.resize ( nx * ny );
+
+        float max = 0.0;
+
+        
+
+        for ( unsigned int i = 0; i < grid.data.size(); i++ )
+        {
+            grid.data[i] = voronoi[i];
+        }
+
+        pub_voronoi_.publish ( grid );
     }
 
 } //end namespace global_planner

@@ -205,7 +205,9 @@ namespace global_planner
              * @brief saves a newly received maps
              * @param _map      the map to save and compute 
              */
-            void setNewMap(cv::Mat _map, Eigen::Vector2d _origin, float _resoltuion );
+            void setNewMap(cv::Mat _map, Eigen::Vector2d _origin, float _resoltuion, int _optimization  );
+            
+            void getVoronoi ( cv::Mat &v_map );
     };
 } //end namespace global_planner
 

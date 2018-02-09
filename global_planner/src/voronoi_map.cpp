@@ -443,7 +443,7 @@ namespace global_planner
         return false;
     }
 
-    void global_planner::VoronoiExpansion::setNewMap ( cv::Mat _map, Eigen::Vector2d _origin, float _resoltuion )
+    void global_planner::VoronoiExpansion::setNewMap ( cv::Mat _map, Eigen::Vector2d _origin, float _resoltuion, int _optimization )
     {
         ROS_INFO ( "debug got map" );
         size_t new_hash = getHash ( _map, _origin, _resoltuion );
@@ -455,7 +455,7 @@ namespace global_planner
             origin_[1] = _origin[1];
             resolution_ = _resoltuion;
 
-            prepareMap ( _map, map_, 9 );
+            prepareMap ( _map, map_, _optimization );
             computeDistanceField ( map_, distfield_ );
 
             ROS_INFO ( "Global Planner: Computing voronoi graph ..." );
@@ -482,4 +482,10 @@ namespace global_planner
 
         return seed;
     }
+    
+    
+    void VoronoiExpansion::getVoronoi ( cv::Mat &v_map )
+    {
+        v_map = voronoi_;
+    };
 }
