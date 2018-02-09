@@ -77,7 +77,7 @@ Waypoint2SplineNode::Waypoint2SplineNode ( ros::NodeHandle & n )
     std::string path_file;
     n_param_.getParam( "path_file", path_file);
     n_param_.param<int>("minimum_number_of_points", minimum_number_of_points_, 5);
-    n_param_.param<double>( "waypoints_distance", waypoints_distance_, 0.5);
+    n_param_.param<double>( "waypoints_distance", waypoints_distance_, 0.1);
     n_param_.param<string>( "path_tmp_file", path_tmp_file_, "/tmp/waypoints_to_spline.yaml");
     spline_msg_.header.seq = 0;
     if(!path_file.empty()) {
