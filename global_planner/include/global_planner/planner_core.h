@@ -165,6 +165,8 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
         bool makePlanService(nav_msgs::GetPlan::Request& req, nav_msgs::GetPlan::Response& resp);
         
         void globalMapCallback(const nav_msgs::OccupancyGrid::ConstPtr& _map);
+        
+        void publishVoronoi();
 
     protected:
 
@@ -174,8 +176,10 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
         costmap_2d::Costmap2D* costmap_;
         std::string frame_id_;
         ros::Publisher plan_pub_;
+        ros::Publisher pub_voronoi_;
         ros::Subscriber sub_map_;
         bool initialized_, allow_unknown_, visualize_potential_;
+        int voronoi_optimization_;
 
     private:
         void mapToWorld(double mx, double my, double& wx, double& wy);
