@@ -163,6 +163,8 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
         void publishPlan(const std::vector<geometry_msgs::PoseStamped>& path);
 
         bool makePlanService(nav_msgs::GetPlan::Request& req, nav_msgs::GetPlan::Response& resp);
+        
+        void globalMapCallback(const nav_msgs::OccupancyGrid::ConstPtr& _map);
 
     protected:
 
@@ -172,6 +174,7 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
         costmap_2d::Costmap2D* costmap_;
         std::string frame_id_;
         ros::Publisher plan_pub_;
+        ros::Subscriber sub_map_;
         bool initialized_, allow_unknown_, visualize_potential_;
 
     private:
@@ -201,6 +204,7 @@ class GlobalPlanner : public nav_core::BaseGlobalPlanner {
 
         bool old_navfn_behavior_;
         float convert_offset_;
+        bool use_voronoi;
 
         dynamic_reconfigure::Server<global_planner::GlobalPlannerConfig> *dsrv_;
         void reconfigureCB(global_planner::GlobalPlannerConfig &config, uint32_t level);
