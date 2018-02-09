@@ -77,7 +77,7 @@ Waypoint2SplineNode::Waypoint2SplineNode (ros::NodeHandle & n)
   std::string path_file;
   n_param_.getParam ("path_file", path_file);
   n_param_.param<int> ("minimum_number_of_points", minimum_number_of_points_, 5);
-  n_param_.param<double> ("waypoints_distance", waypoints_distance_, 0.01);
+  n_param_.param<double> ("min_waypoint_distance", min_waypoint_distance_, 0.0); /// minimum distance between waypoints to used as spline knots, 0 means all waypoints are used
   n_param_.param<string> ("path_tmp_file", path_tmp_file_, "/tmp/waypoints_to_spline.yaml");
   spline_msg_.header.seq = 0;
   if (!path_file.empty()) {
@@ -186,11 +186,11 @@ void Waypoint2SplineNode::callbackPath (const nav_msgs::Path &msg) {
           initPart = false;
         }
       }
-      if (i < idxEndBeforeLast) {
+      if ((min_waypoint_distance_ > 0.) && (i < idxEndBeforeLast)) {
         double dx = points_[0].back() - pose.position.x;
         double dy = points_[1].back() - pose.position.y;
         double d = sqrt (dx*dx+dy*dy);
-        if (d < waypoints_distance_) continue;
+        if (d < min_waypoint_distance_) continue;
       } else if (i < msg.poses.size()-1) {
         continue;
       }

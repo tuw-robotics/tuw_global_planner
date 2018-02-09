@@ -62,7 +62,7 @@ private:
     
     std::string global_frame_id_;
     tuw_nav_msgs::Spline spline_msg_;
-    double waypoints_distance_;
+    double min_waypoint_distance_;
     std::string path_tmp_file_;
     int minimum_number_of_points_;
     
