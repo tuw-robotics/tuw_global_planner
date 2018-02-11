@@ -186,13 +186,17 @@ void Waypoint2SplineNode::callbackPath (const nav_msgs::Path &msg) {
           initPart = false;
         }
       }
-      if ((min_waypoint_distance_ > 0.) && (i < idxEndBeforeLast)) {
+      if (i < idxEndBeforeLast) {
         double dx = points_[0].back() - pose.position.x;
         double dy = points_[1].back() - pose.position.y;
         double d = sqrt (dx*dx+dy*dy);
-        if (d < min_waypoint_distance_) continue;
-      } else if (i < msg.poses.size()-1) {
-        continue;
+        if (d < min_waypoint_distance_) {
+            continue;
+        }
+      } else { 
+          if (i < msg.poses.size()-1) {
+            continue;
+          }
       }
       points_[0].push_back (pose.position.x);
       points_[1].push_back (pose.position.y);
