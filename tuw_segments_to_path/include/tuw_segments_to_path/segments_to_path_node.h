@@ -58,8 +58,9 @@ private:
     
     /// ROS shared parameters
     std::string global_frame_id_;
+    std::string file_;
+    bool once_;
     double waypoints_distance_;
-    std::string segment_file_;
     double sample_distance_;
     bool update_header_timestamp_;
     

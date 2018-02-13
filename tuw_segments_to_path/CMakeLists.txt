@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(tuw_path_generator)
+project(tuw_segments_to_path)
 add_compile_options(-std=c++1y) ## for c++ 2011
 
 ## Find catkin macros and libraries
@@ -103,7 +103,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES tuw_path_generator
+#  LIBRARIES tuw_segments_to_path
 #  CATKIN_DEPENDS tuw_nav_msgs
 #  DEPENDS system_lib
 )
@@ -121,14 +121,14 @@ include_directories(
 )
 
 ## Declare a C++ library
-# add_library(tuw_path_generator
-#   src/${PROJECT_NAME}/tuw_path_generator.cpp
+# add_library(tuw_segments_to_path
+#   src/${PROJECT_NAME}/tuw_segments_to_path.cpp
 # )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(tuw_path_generator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(tuw_segments_to_path ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 add_executable(segments_to_path_node src/segments_to_path_node.cpp)
@@ -158,7 +158,7 @@ target_link_libraries(segments_to_path_node
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS tuw_path_generator tuw_path_generator_node
+# install(TARGETS tuw_segments_to_path tuw_segments_to_path_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -183,7 +183,7 @@ target_link_libraries(segments_to_path_node
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_tuw_path_generator.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_tuw_segments_to_path.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

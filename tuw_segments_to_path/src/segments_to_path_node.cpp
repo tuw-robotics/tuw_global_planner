@@ -31,7 +31,7 @@
  ***************************************************************************/
 
 
-#include <tuw_path_generator/segments_to_path_node.h>
+#include <tuw_segments_to_path/segments_to_path_node.h>
 
 #include <iostream>
 #include <fstream>
@@ -46,22 +46,7 @@ int main ( int argc, char **argv ) {
     ros::init ( argc, argv, "segments_to_path" );  /// initializes the ros node with default name
     ros::NodeHandle n;
 
-    ros::Rate r ( 5 );
     Segments2Path node ( n );
-    r.sleep();
-
-
-    while ( ros::ok() ) {
-
-        node.publishPath();
-        node.publishSegments();
-
-        /// calls all callbacks waiting in the queue
-        ros::spinOnce();
-
-        /// sleeps for the time remaining to let us hit our publish rate
-        r.sleep();
-    }
     return 0;
 }
 
@@ -73,16 +58,31 @@ Segments2Path::Segments2Path ( ros::NodeHandle & n )
       n_param_ ( "~" ) {
 
     n_param_.param<std::string> ( "global_frame", global_frame_id_, "map" );
-    n_param_.getParam ( "segment_file", segment_file_ );
-    n_param_.param<double> ( "waypoints_distance", waypoints_distance_, 0.5 );
+    n_param_.getParam ( "file", file_ );         // yaml file with semgents
+    n_param_.param<bool>("once", once_, true);    // a publishs path only onece
     n_param_.param<bool> ( "update_header_timestamp", update_header_timestamp_, true );
     n_param_.param<double>("sample_distance", sample_distance_, 0.1);
     pub_path_   = n.advertise<nav_msgs::Path> ( "path"  , 1 );
     pub_segments_   = n.advertise<tuw_nav_msgs::RouteSegments> ( "segments"  , 1 );
-    if ( !segment_file_.empty() ) {
-        readSegments ( segment_file_ );
+    if ( !file_.empty() ) {
+        readSegments ( file_ );
     }
+    
     msg_segments_.header.seq = 0;
+    
+    ros::Rate r ( 1 );
+    ros::ok();
+    r.sleep();
+    
+    do{
+      publishPath();
+      publishSegments();
+      
+      /// calls all callbacks waiting in the queue
+      ros::spinOnce();
+      /// sleeps for the time remaining to let us hit our publish rate
+      r.sleep();
+    } while ( ros::ok() && !once_);
 }
 
 
