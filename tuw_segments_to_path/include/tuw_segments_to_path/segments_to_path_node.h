@@ -30,46 +30,46 @@
  *   POSSIBILITY OF SUCH DAMAGE.                                           *
  ***************************************************************************/
 
-
 #ifndef TUW_SEGMENS_TO_PATH_H
 #define TUW_SEGMENS_TO_PATH_H
 
-
-//ROS
+// ROS
 #include <ros/ros.h>
 #include <nav_msgs/Path.h>
 #include <tuw_geometry/pose2d.h>
 #include <tuw_nav_msgs/route_segments.h>
 
-namespace tuw {
+namespace tuw
+{
 /**
  * class to cover the ros communication
  **/
-class Segments2Path {
+class Segments2Path
+{
 public:
-    Segments2Path ( ros::NodeHandle & n ); /// Constructor
-    void publishPath ();
-    void publishSegments ();
-private:
-    ros::NodeHandle n_;             /// node handler to the root node
-    ros::NodeHandle n_param_;       /// node handler to the current node
-    ros::Publisher pub_path_;       /// publisher for the path waypoints
-    ros::Publisher pub_segments_;   /// publisher for the segements
-    
-    /// ROS shared parameters
-    std::string global_frame_id_;
-    std::string file_;
-    bool once_;
-    double waypoints_distance_;
-    double sample_distance_;
-    bool update_header_timestamp_;
-    
-    nav_msgs::Path msg_path_;
-    tuw::ros_msgs::RouteSegments msg_segments_;
-    std::vector<Pose2D> waypoints_;
-    void readSegments(const std::string &segment_file);
-};
+  Segments2Path(ros::NodeHandle &n);  /// Constructor
+  void publishPath();
+  void publishSegments();
 
+private:
+  ros::NodeHandle n_;            /// node handler to the root node
+  ros::NodeHandle n_param_;      /// node handler to the current node
+  ros::Publisher pub_path_;      /// publisher for the path waypoints
+  ros::Publisher pub_segments_;  /// publisher for the segements
+
+  /// ROS shared parameters
+  std::string global_frame_id_;
+  std::string file_;
+  bool once_;
+  double waypoints_distance_;
+  double sample_distance_;
+  bool update_header_timestamp_;
+
+  nav_msgs::Path msg_path_;
+  tuw::ros_msgs::RouteSegments msg_segments_;
+  std::vector<Pose2D> waypoints_;
+  void readSegments(const std::string &segment_file);
+};
 }
 
-#endif // TUW_SEGMENS_TO_PATH_H
+#endif  // TUW_SEGMENS_TO_PATH_H

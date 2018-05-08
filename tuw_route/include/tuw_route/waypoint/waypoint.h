@@ -30,7 +30,6 @@
  *   POSSIBILITY OF SUCH DAMAGE.                                           *
  ***************************************************************************/
 
-
 #ifndef WAYPOINT_H
 #define WAYPOINT_H
 
@@ -39,42 +38,68 @@
 
 #include <tuw_geometry/pose2d.h>
 
-namespace tuw {
+namespace tuw
+{
+class Waypoint
+{
+public:
+  enum Validity
+  {
+    VALID = 0,
+    INVALID = 1
+  };
 
-class Waypoint {
+public:
+  static constexpr const uint16_t STATE_VISIT = 0;
 
-    public   : enum Validity {
-      VALID = 0,
-      INVALID = 1
-    };
-    public   : static constexpr const uint16_t STATE_VISIT = 0;
-    public   : static constexpr const uint16_t STATE_ACTIVE = 1;
-    public   : static constexpr const uint16_t STATE_AHEAD = 2;
-    
-    //special class member functions
-    public   : Waypoint           ();
-    public   : ~Waypoint          ()                = default;
-    public   : Waypoint           (const Waypoint&) = default;
-    public   : Waypoint& operator=(const Waypoint&) = default;
-    public   : Waypoint           (Waypoint&&)      = default;
-    public   : Waypoint& operator=(Waypoint&&)      = default;
-    
-    
-    public   : Validity       isTypeValid() const;
-    public   : std::string getStateString() const;
-    
-    public   : Pose2D pose;
-    public   : double distanceToGoal;
-    public   : uint16_t state;  ///< state STATE_ACTIVE, STATE_VIST or STATE_AHEAD
-    
-    public   : friend std::ostream& operator<< ( std::ostream &os, const tuw::Waypoint &o ) {
-        os << "[Waypoint: pose=" << o.pose;
-        os <<         ", state=" << o.getStateString();
-        os <<         ", sGoal=" << o.distanceToGoal << "m";
-        return os;
-    }
+public:
+  static constexpr const uint16_t STATE_ACTIVE = 1;
+
+public:
+  static constexpr const uint16_t STATE_AHEAD = 2;
+
+  // special class member functions
+public:
+  Waypoint();
+
+public:
+  ~Waypoint() = default;
+
+public:
+  Waypoint(const Waypoint&) = default;
+
+public:
+  Waypoint& operator=(const Waypoint&) = default;
+
+public:
+  Waypoint(Waypoint&&) = default;
+
+public:
+  Waypoint& operator=(Waypoint&&) = default;
+
+public:
+  Validity isTypeValid() const;
+
+public:
+  std::string getStateString() const;
+
+public:
+  Pose2D pose;
+
+public:
+  double distanceToGoal;
+
+public:
+  uint16_t state;  ///< state STATE_ACTIVE, STATE_VIST or STATE_AHEAD
+
+public:
+  friend std::ostream& operator<<(std::ostream& os, const tuw::Waypoint& o)
+  {
+    os << "[Waypoint: pose=" << o.pose;
+    os << ", state=" << o.getStateString();
+    os << ", sGoal=" << o.distanceToGoal << "m";
+    return os;
+  }
 };
-
-
 }
-#endif // WAYPOINT_H
+#endif  // WAYPOINT_H

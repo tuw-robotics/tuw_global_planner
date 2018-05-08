@@ -30,28 +30,29 @@
  *   POSSIBILITY OF SUCH DAMAGE.                                           *
  ***************************************************************************/
 
-
 #include <tuw_route/waypoint/waypoint.h>
 
 using namespace tuw;
 
-Waypoint::Waypoint()
-    : distanceToGoal ( 0 )
-    , state ( STATE_AHEAD ) {
+Waypoint::Waypoint() : distanceToGoal(0), state(STATE_AHEAD)
+{
 }
-Waypoint::Validity Waypoint::isTypeValid() const {
-    ///@ToDo
-    return Waypoint::VALID;
+Waypoint::Validity Waypoint::isTypeValid() const
+{
+  ///@ToDo
+  return Waypoint::VALID;
 }
-std::string Waypoint::getStateString() const {
-    switch ( state ) {
+std::string Waypoint::getStateString() const
+{
+  switch (state)
+  {
     case STATE_AHEAD:
-        return " ahead";
+      return " ahead";
     case STATE_VISIT:
-        return " visit";
+      return " visit";
     case STATE_ACTIVE:
-        return "active";
+      return "active";
     default:
-        return "    NA";
-    }
+      return "    NA";
+  }
 }

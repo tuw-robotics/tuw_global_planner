@@ -30,49 +30,53 @@
  *   POSSIBILITY OF SUCH DAMAGE.                                           *
  ***************************************************************************/
 
-
 #ifndef TUW_PATH_TO_SPLINE_NODE_H
 #define TUW_PATH_TO_SPLINE_NODE_H
 
 #include <tuw_waypoint_to_spline/tuw_waypoint_to_spline.h>
 
-//ROS
+// ROS
 #include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
 #include <tuw_nav_msgs/Spline.h>
 #include <nav_msgs/Path.h>
 #include <tf/transform_listener.h>
 
-namespace tuw {
+namespace tuw
+{
 /**
  * class to cover the ros communication
  **/
-class Waypoint2SplineNode : public Waypoint2Spline {
+class Waypoint2SplineNode : public Waypoint2Spline
+{
 public:
-    Waypoint2SplineNode ( ros::NodeHandle & n ); /// Constructor
-    void publishSpline ();
-private:
-    ros::NodeHandle n_;         /// node handler to the root node
-    ros::NodeHandle n_param_;   /// node handler to the current node
-    ros::Publisher  pubSplineData_;    /// publisher for the motion commands
-    ros::Subscriber sub_path_; /// Subscriber to the laser measurements
-    ros::Subscriber sub_path; /// Subscriber to the laser measurements
-    
-    private  : tf::TransformListener    tf_listener_;  
-    
-    std::string global_frame_id_;
-    tuw_nav_msgs::Spline spline_msg_;
-    double min_waypoint_distance_;
-    std::string path_tmp_file_;
-    int minimum_number_of_points_;
-    
-//     dynamic_reconfigure::Server<tuw_path_to_spline::Path2SplineNodeConfig> reconfigureServer_; /// parameter server stuff
-//     dynamic_reconfigure::Server<tuw_path_to_spline::Path2SplineNodeConfig>::CallbackType reconfigureFnc_;  /// parameter server stuff
-    void callbackPath ( const nav_msgs::Path& );   /// callback function to execute on path msg
-    void constructSplineFromFile (const std::string &file);    
-    tuw_nav_msgs::Spline constructSplineMsg ();    
-};
+  Waypoint2SplineNode(ros::NodeHandle &n);  /// Constructor
+  void publishSpline();
 
+private:
+  ros::NodeHandle n_;             /// node handler to the root node
+  ros::NodeHandle n_param_;       /// node handler to the current node
+  ros::Publisher pubSplineData_;  /// publisher for the motion commands
+  ros::Subscriber sub_path_;      /// Subscriber to the laser measurements
+  ros::Subscriber sub_path;       /// Subscriber to the laser measurements
+
+private:
+  tf::TransformListener tf_listener_;
+
+  std::string global_frame_id_;
+  tuw_nav_msgs::Spline spline_msg_;
+  double min_waypoint_distance_;
+  std::string path_tmp_file_;
+  int minimum_number_of_points_;
+
+  //     dynamic_reconfigure::Server<tuw_path_to_spline::Path2SplineNodeConfig> reconfigureServer_; /// parameter server
+  //     stuff
+  //     dynamic_reconfigure::Server<tuw_path_to_spline::Path2SplineNodeConfig>::CallbackType reconfigureFnc_;  ///
+  //     parameter server stuff
+  void callbackPath(const nav_msgs::Path &);  /// callback function to execute on path msg
+  void constructSplineFromFile(const std::string &file);
+  tuw_nav_msgs::Spline constructSplineMsg();
+};
 }
 
-#endif // TUW_PATH_TO_SPLINE_NODE_H
+#endif  // TUW_PATH_TO_SPLINE_NODE_H

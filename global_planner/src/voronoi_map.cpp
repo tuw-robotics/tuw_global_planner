@@ -42,450 +42,465 @@
 
 namespace global_planner
 {
+#define POT_HIGH 1.0e10
 
-#define POT_HIGH    1.0e10
+VoronoiExpansion::VoronoiExpansion(PotentialCalculator *p_calc, int xs, int ys, Heuristics *hx)
+  : Expander(p_calc, xs, ys), VoronoiPathGenerator()
+{
+  hx_ = hx;
 
-    VoronoiExpansion::VoronoiExpansion ( PotentialCalculator *p_calc, int xs, int ys, Heuristics *hx ) :
-        Expander ( p_calc, xs, ys ), VoronoiPathGenerator()
+  distance_field_.reset(new float[ns_]);
+  voronoi_graph_.reset(new int8_t[ns_]);
+  global_map_.reset(new int8_t[ns_]);
+}
+
+void VoronoiExpansion::getMaps(float *distance_field, int8_t *voronoi_graph, int8_t *global_map)
+{
+  ns_ = map_.cols * map_.rows;
+  nx_ = map_.cols;
+  ny_ = map_.rows;
+
+  for (int i = 0; i < ns_; i++)
+  {
+    if (((int8_t *)map_.data)[i] == -1)
+      global_map[i] = 0;
+    else
+      global_map[i] = 1;
+
+    distance_field[i] = ((float *)distfield_.data)[i];
+    voronoi_graph[i] = ((int8_t *)voronoi_.data)[i];
+  }
+
+  /*for ( grid_map::GridMapIterator iterator ( *voronoi_map ); !iterator.isPastEnd(); ++iterator )
+  {
+      const grid_map::Index mapIndex = iterator.getUnwrappedIndex();
+      int arrayIndex = ( ny_ - 1 - mapIndex[1] ) * nx_ + ( nx_ - 1 - mapIndex[0] ); //Maybe use Opencv to get rid of
+  these calculation (turn 90deg and mirror)
+      distance_field[arrayIndex] = distfield ( iterator.getLinearIndex() );
+      voronoi_graph[arrayIndex] = voronoi ( iterator.getLinearIndex() );
+      global_map[arrayIndex] = map ( iterator.getLinearIndex() );
+  }*/
+}
+
+bool VoronoiExpansion::calculatePotentials(unsigned char *costs, double start_x, double start_y, double end_x,
+                                           double end_y, int cycles, float *potential)
+{
+  if (!gotMap_)
+  {
+    ROS_ERROR("Global Planner: no map received!!!");
+    return false;
+  }
+
+  float *distance_field = distance_field_.get();
+  int8_t *voronoi_graph = voronoi_graph_.get();
+  int8_t *global_map = global_map_.get();
+
+  getMaps(distance_field, voronoi_graph, global_map);
+
+  Index startPoint = Index(start_x, start_y, nx_, 0, 0, 0);
+  Index endPoint = Index(end_x, end_y, nx_, 0, 0, 0);
+
+  // EndPoint candidates //Dikjstra instead of going along the distance_field because sometimes the voronoi map is a
+  // little bit of the distance field (if so gradient mehtod would fail)
+  std::fill(potential, potential + ns_, POT_HIGH);
+  Index endPointGraph =
+      expandDijkstraToVoronoi(endPoint, startPoint, cycles, global_map, voronoi_graph, distance_field, potential);
+
+  if (endPointGraph.i < 0)
+    return false;
+
+  int endPointImprovementSteps = (int)distance_field[endPointGraph.i];
+  endpoints_ = findVoronoiCandidates(endPointGraph, global_map, voronoi_graph, distance_field, potential,
+                                     endPointImprovementSteps);
+
+  // StartPoint candidates //Reset map for Start calculation (in case Start is next to end)
+  std::fill(potential, potential + ns_, POT_HIGH);
+  Index startPointGraph =
+      expandDijkstraToVoronoi(startPoint, endPoint, cycles, global_map, voronoi_graph, distance_field, potential);
+
+  if (startPointGraph.i < 0)
+    return false;
+
+  int startPointImprovementSteps = (int)distance_field[startPointGraph.i];
+  std::list<Index> startpoints = findVoronoiCandidates(startPointGraph, global_map, voronoi_graph, distance_field,
+                                                       potential, startPointImprovementSteps);
+  startpoints.push_back(startPointGraph);
+
+  // Start the Algorigthm by expanding on the Graph
+  std::fill(potential, potential + ns_, POT_HIGH);  // For having a high startpotential
+  potential[startPointGraph.i] = startPointGraph.potential;
+  Index endPointGraphReal =
+      expandVoronoi(startPointGraph, endPointGraph, cycles, global_map, voronoi_graph, distance_field, potential);
+
+  if (endPointGraphReal.i < 0)
+    return false;
+
+  // Draw lines to all startpoints and the endpoint (there is allways a straight line between voronoi Graph and
+  // endPoint)
+  expandLine(endPointGraphReal, endPoint, endPointGraphReal.potential, -1, potential);
+
+  for (std::list<Index>::iterator it = startpoints.begin(); it != startpoints.end(); ++it)
+  {
+    expandLine(startPoint, *it, 0, startPointGraph.potential, potential);
+  }
+
+  return true;
+}
+
+void VoronoiExpansion::expandLine(Index start, Index end, float startPotential, float endPotential, float *potential)
+{
+  int start_x = start.i % nx_;
+  int start_y = start.i / nx_;
+  int end_x = end.i % nx_;
+  int end_y = end.i / nx_;
+
+  int steps = std::max(abs(start_x - end_x), abs(start_y - end_y));
+
+  float neutralCosts = 1;
+
+  if (endPotential >= 0)
+    (endPotential - startPotential) / steps;
+
+  float improvementX = (float)(end_x - start_x) / (float)steps;
+  float improvementY = (float)(end_y - start_y) / (float)steps;
+  potential[start.i] = startPotential;
+  float actPotential = startPotential;
+
+  for (int i = 0; i < steps; i++)
+  {
+    actPotential += neutralCosts;
+    potential[start.offsetDist(improvementX * i, improvementY * i, nx_, ny_).i] = actPotential;
+  }
+}
+
+std::list<VoronoiExpansion::Index> VoronoiExpansion::findVoronoiCandidates(Index start, int8_t *map,
+                                                                           int8_t *voronoi_map, float *dist_field,
+                                                                           float *potential, int steps)
+{
+  int cycle = 0;
+  std::list<Index> candidates;
+
+  candidates.push_back(start);
+
+  Index current(start.i, potential[start.i], 0, potential[start.i]);
+  potential[current.i] = 0;
+  current.potential = 0;
+
+  // clear the queue
+  clearpq(queue_);
+  queue_.push(current);
+
+  while (!queue_.empty())
+  {
+    if (queue_.empty())
+      return candidates;
+
+    current = queue_.top();
+    queue_.pop();
+
+    // ROS_INFO("c %i %i %i", cycle, (int)current.potential, steps);
+    // If we have found a max potential return the pixel
+    if (current.potential >= steps)
     {
-        hx_ = hx;
-
-        distance_field_.reset ( new float[ns_] );
-        voronoi_graph_.reset ( new int8_t[ns_] );
-        global_map_.reset ( new int8_t[ns_] );
+      // ROS_INFO("Padd %i", current.i);
+      candidates.push_back(current);
+    }
+    else if (cycle < steps * 10)  // Maximum ten new endpoints...
+    {
+      addExpansionCandidate(start, current, current.offsetDist(1, 0, nx_, ny_), start, map, voronoi_map, dist_field,
+                            potential, true, true);
+      addExpansionCandidate(start, current, current.offsetDist(0, 1, nx_, ny_), start, map, voronoi_map, dist_field,
+                            potential, true, true);
+      addExpansionCandidate(start, current, current.offsetDist(-1, 0, nx_, ny_), start, map, voronoi_map, dist_field,
+                            potential, true, true);
+      addExpansionCandidate(start, current, current.offsetDist(0, -1, nx_, ny_), start, map, voronoi_map, dist_field,
+                            potential, true, true);
+      addExpansionCandidate(start, current, current.offsetDist(1, 1, nx_, ny_), start, map, voronoi_map, dist_field,
+                            potential, true, true);
+      addExpansionCandidate(start, current, current.offsetDist(-1, 1, nx_, ny_), start, map, voronoi_map, dist_field,
+                            potential, true, true);
+      addExpansionCandidate(start, current, current.offsetDist(-1, -1, nx_, ny_), start, map, voronoi_map, dist_field,
+                            potential, true, true);
+      addExpansionCandidate(start, current, current.offsetDist(1, -1, nx_, ny_), start, map, voronoi_map, dist_field,
+                            potential, true, true);
     }
 
-    void VoronoiExpansion::getMaps ( float *distance_field, int8_t *voronoi_graph, int8_t *global_map )
+    cycle++;
+  }
+
+  return candidates;
+}
+
+VoronoiExpansion::Index VoronoiExpansion::expandDijkstraToVoronoi(Index start, Index end, int cycles, int8_t *map,
+                                                                  int8_t *voronoi_map, float *dist_field,
+                                                                  float *potential)
+{
+  int cycle = 0;
+
+  Index current(start.i, 0, 0, 0);
+  potential[current.i] = 0;
+
+  // clear the queue
+  clearpq(queue_);
+  queue_.push(current);
+
+  while (!queue_.empty() && voronoi_map[current.i] >= 0 && cycle < cycles)
+  {
+    if (queue_.empty())
+      return Index(-1, 0, 0, 0);
+
+    current = queue_.top();
+    queue_.pop();
+
+    // If we have found a max potential return the pixel
+    if (voronoi_map[current.i] < 0)
     {
-        ns_ = map_.cols * map_.rows;
-        nx_ = map_.cols;
-        ny_ = map_.rows;
-
-
-        for ( int i = 0; i < ns_; i++ )
-        {
-            if ( ( ( int8_t * ) map_.data ) [i] == -1 )
-                global_map[i] = 0;
-            else
-                global_map[i] = 1;
-
-            distance_field[i] = ( ( float * ) distfield_.data ) [i];
-            voronoi_graph[i] = ( ( int8_t * ) voronoi_.data ) [i];
-        }
-
-        /*for ( grid_map::GridMapIterator iterator ( *voronoi_map ); !iterator.isPastEnd(); ++iterator )
-        {
-            const grid_map::Index mapIndex = iterator.getUnwrappedIndex();
-            int arrayIndex = ( ny_ - 1 - mapIndex[1] ) * nx_ + ( nx_ - 1 - mapIndex[0] ); //Maybe use Opencv to get rid of these calculation (turn 90deg and mirror)
-            distance_field[arrayIndex] = distfield ( iterator.getLinearIndex() );
-            voronoi_graph[arrayIndex] = voronoi ( iterator.getLinearIndex() );
-            global_map[arrayIndex] = map ( iterator.getLinearIndex() );
-        }*/
+      potential[current.i] = current.potential;
+      return current;
     }
 
+    addExpansionCandidate(start, current, current.offsetDist(1, 0, nx_, ny_), end, map, voronoi_map, dist_field,
+                          potential, false, true);
+    addExpansionCandidate(start, current, current.offsetDist(0, 1, nx_, ny_), end, map, voronoi_map, dist_field,
+                          potential, false, true);
+    addExpansionCandidate(start, current, current.offsetDist(-1, 0, nx_, ny_), end, map, voronoi_map, dist_field,
+                          potential, false, true);
+    addExpansionCandidate(start, current, current.offsetDist(0, -1, nx_, ny_), end, map, voronoi_map, dist_field,
+                          potential, false, true);
 
-    bool VoronoiExpansion::calculatePotentials ( unsigned char *costs, double start_x, double start_y, double end_x, double end_y, int cycles, float *potential )
+    cycle++;
+  }
+
+  if (cycle >= cycles)
+    return Index(-1, -1, -1, -1);
+  else
+    return start;
+}
+
+VoronoiExpansion::Index VoronoiExpansion::expandToEnd(Index start, Index end, int cycles, int8_t *map,
+                                                      int8_t *voronoi_map, float *distance_map, float *potential)
+{
+  int cycle = 0;
+
+  Index current(start.i, potential[start.i], 0, potential[start.i]);
+
+  // clear the queue
+  clearpq(queue_);
+  queue_.push(current);
+
+  while (!queue_.empty() && current.i != end.i && cycle < cycles)
+  {
+    if (queue_.empty())
+      return Index(-1, 0, 0, 0);
+
+    current = queue_.top();
+    queue_.pop();
+
+    // If we have found a max potential return the pixel
+    if (current.i == end.i)
     {
-        if ( !gotMap_ )
-        {
-            ROS_ERROR ( "Global Planner: no map received!!!" );
-            return false;
-        }
-
-
-        float *distance_field = distance_field_.get();
-        int8_t *voronoi_graph = voronoi_graph_.get();
-        int8_t *global_map = global_map_.get();
-
-        getMaps ( distance_field, voronoi_graph, global_map );
-
-        Index startPoint = Index ( start_x, start_y, nx_, 0, 0, 0 );
-        Index endPoint = Index ( end_x, end_y, nx_, 0, 0, 0 );
-
-
-
-
-
-
-        //EndPoint candidates //Dikjstra instead of going along the distance_field because sometimes the voronoi map is a little bit of the distance field (if so gradient mehtod would fail)
-        std::fill ( potential, potential + ns_, POT_HIGH );
-        Index endPointGraph = expandDijkstraToVoronoi ( endPoint, startPoint, cycles, global_map, voronoi_graph, distance_field, potential );
-
-        if ( endPointGraph.i < 0 )
-            return false;
-
-        int endPointImprovementSteps = ( int ) distance_field[endPointGraph.i];
-        endpoints_ = findVoronoiCandidates ( endPointGraph, global_map, voronoi_graph, distance_field, potential, endPointImprovementSteps );
-
-        //StartPoint candidates //Reset map for Start calculation (in case Start is next to end)
-        std::fill ( potential, potential + ns_, POT_HIGH );
-        Index startPointGraph = expandDijkstraToVoronoi ( startPoint, endPoint, cycles, global_map, voronoi_graph, distance_field, potential );
-
-        if ( startPointGraph.i < 0 )
-            return false;
-
-        int startPointImprovementSteps = ( int ) distance_field[startPointGraph.i];
-        std::list<Index> startpoints = findVoronoiCandidates ( startPointGraph, global_map, voronoi_graph, distance_field, potential, startPointImprovementSteps );
-        startpoints.push_back ( startPointGraph );
-
-
-
-
-
-
-        //Start the Algorigthm by expanding on the Graph
-        std::fill ( potential, potential + ns_, POT_HIGH );                                           //For having a high startpotential
-        potential[startPointGraph.i] = startPointGraph.potential;
-        Index endPointGraphReal = expandVoronoi ( startPointGraph, endPointGraph, cycles, global_map, voronoi_graph, distance_field, potential );
-
-        if ( endPointGraphReal.i < 0 )
-            return false;
-
-
-        //Draw lines to all startpoints and the endpoint (there is allways a straight line between voronoi Graph and endPoint)
-        expandLine ( endPointGraphReal, endPoint, endPointGraphReal.potential, -1, potential );
-
-        for ( std::list<Index>::iterator it = startpoints.begin(); it != startpoints.end(); ++it )
-        {
-            expandLine ( startPoint, *it, 0, startPointGraph.potential, potential );
-        }
-
-        return true;
+      potential[current.i] = current.potential;
+      return current;
     }
 
-    void VoronoiExpansion::expandLine ( Index start, Index end, float startPotential, float endPotential, float *potential )
+    addExpansionCandidate(start, current, current.offsetDist(1, 0, nx_, ny_), end, map, voronoi_map, distance_map,
+                          potential, false, false);
+    addExpansionCandidate(start, current, current.offsetDist(0, 1, nx_, ny_), end, map, voronoi_map, distance_map,
+                          potential, false, false);
+    addExpansionCandidate(start, current, current.offsetDist(-1, 0, nx_, ny_), end, map, voronoi_map, distance_map,
+                          potential, false, false);
+    addExpansionCandidate(start, current, current.offsetDist(0, -1, nx_, ny_), end, map, voronoi_map, distance_map,
+                          potential, false, false);
+
+    cycle++;
+  }
+
+  if (cycle >= cycles)
+    return Index(-1, -1, -1, -1);
+  else
+    return start;
+}
+
+void VoronoiExpansion::addExpansionCandidate(Index start, Index current, Index next, Index end, int8_t *map,
+                                             int8_t *voronoi_map, float *dist_field, float *potential,
+                                             bool expand_on_voronoi, bool expand_dijkstra_to_voronoi)
+{
+  float potentialPrev = potential[current.i];
+
+  // Check Boundries
+  if (next.i < 0 || next.i > ns_)
+    return;
+
+  // Dont update allready found potentials
+  if (potential[next.i] < POT_HIGH)
+    return;
+
+  if (map[next.i] > 0)
+    return;
+
+  if (expand_on_voronoi)
+  {
+    if (voronoi_map[next.i] >= 0)  // If not on voronoi graph return
+      return;
+  }
+
+  float pot = 0;
+  float dist = 0;
+  float weight = 0;
+
+  if (expand_dijkstra_to_voronoi)
+  {
+    pot = potentialPrev + neutral_cost_;
+    weight = -dist_field[next.i];  // Set wait to prefer higher potentials
+  }
+  else
+  {
+    int start_x = start.i % nx_;
+    int start_y = start.i / ny_;
+    int end_x = end.i % nx_;
+    int end_y = end.i / ny_;
+    int next_x = next.i % nx_;
+    int next_y = next.i / nx_;
+
+    dist = sqrt((start_x - next_x) * (start_x - next_x) + (start_y - next_y) * (start_y - next_y)) * neutral_cost_;
+    pot = potentialPrev +
+          hx_->CalcCosts(next_x, next_y, start_x, start_y, end_x, end_y, current.dist, neutral_cost_, false);
+    float h = hx_->CalcHeuristic(next_x, next_y, start_x, start_y, end_x, end_y, neutral_cost_);
+    weight = pot + h;
+  }
+
+  if (expand_dijkstra_to_voronoi && expand_on_voronoi)
+  {
+    potential[next.i] = pot;
+  }
+  else if (expand_dijkstra_to_voronoi)
+  {
+    if (voronoi_map[next.i] >= 0)
+      potential[next.i] = pot;
+    else
     {
-        int start_x = start.i % nx_;
-        int start_y = start.i / nx_;
-        int end_x = end.i % nx_;
-        int end_y = end.i / nx_;
+      weight = -dist_field[next.i];  // to move up pixel in queue
+    }
+  }
+  else
+  {
+    if (next.i != end.i)
+      potential[next.i] = pot;
+    else
+    {
+      weight = 0;  // to move up pixel in queue
+    }
+  }
 
-        int steps = std::max ( abs ( start_x - end_x ), abs ( start_y - end_y ) );
+  queue_.push(Index(next.i, weight, dist, pot));
+}
 
-        float neutralCosts = 1;
+VoronoiExpansion::Index VoronoiExpansion::expandVoronoi(Index start, Index end, int cycles, int8_t *map,
+                                                        int8_t *voronoi_map, float *distance_map, float *potential)
+{
+  int cycle = 0;
 
-        if ( endPotential >= 0 )
-            ( endPotential - startPotential ) / steps;
+  Index current(start.i, potential[start.i], 0, potential[start.i]);
 
-        float improvementX = ( float ) ( end_x - start_x ) / ( float ) steps;
-        float improvementY = ( float ) ( end_y - start_y ) / ( float ) steps;
-        potential[start.i] = startPotential;
-        float actPotential = startPotential;
+  // clear the queue
+  clearpq(queue_);
+  queue_.push(current);
 
-        for ( int i = 0; i < steps; i++ )
-        {
-            actPotential += neutralCosts;
-            potential[start.offsetDist ( improvementX * i, improvementY * i, nx_, ny_ ).i] = actPotential;
-        }
+  while (!queue_.empty() && cycle < cycles && !isEndpoint(current))  //&& !isInGoalZone(current.i)
+  {
+    if (queue_.empty())
+      return Index(-1, 0, 0, 0);
+
+    current = queue_.top();
+    queue_.pop();
+
+    // If we have found a max potential return the pixel
+    if (isEndpoint(current))
+    {
+      potential[current.i] = current.potential;
+      return current;
     }
 
-    std::list<VoronoiExpansion::Index> VoronoiExpansion::findVoronoiCandidates ( Index start, int8_t *map, int8_t *voronoi_map, float *dist_field, float *potential, int steps )
-    {
-        int cycle = 0;
-        std::list<Index> candidates;
-
-        candidates.push_back ( start );
-
-        Index current ( start.i, potential[start.i], 0, potential[start.i] );
-        potential[current.i] = 0;
-        current.potential = 0;
-
-        //clear the queue
-        clearpq ( queue_ );
-        queue_.push ( current );
-
-        while ( !queue_.empty() )
-        {
-            if ( queue_.empty() )
-                return candidates;
-
-            current = queue_.top();
-            queue_.pop();
-
-            //ROS_INFO("c %i %i %i", cycle, (int)current.potential, steps);
-            //If we have found a max potential return the pixel
-            if ( current.potential >= steps )
-            {
-                //ROS_INFO("Padd %i", current.i);
-                candidates.push_back ( current );
-
-            }
-            else if ( cycle < steps * 10 ) //Maximum ten new endpoints...
-            {
-                addExpansionCandidate ( start, current, current.offsetDist ( 1, 0, nx_, ny_ ), start, map, voronoi_map, dist_field, potential, true, true );
-                addExpansionCandidate ( start, current, current.offsetDist ( 0, 1, nx_, ny_ ), start, map, voronoi_map, dist_field, potential, true, true );
-                addExpansionCandidate ( start, current, current.offsetDist ( -1, 0, nx_, ny_ ), start, map, voronoi_map, dist_field, potential, true, true );
-                addExpansionCandidate ( start, current, current.offsetDist ( 0, -1, nx_, ny_ ), start, map, voronoi_map, dist_field, potential, true, true );
-                addExpansionCandidate ( start, current, current.offsetDist ( 1, 1, nx_, ny_ ), start, map, voronoi_map, dist_field, potential, true, true );
-                addExpansionCandidate ( start, current, current.offsetDist ( -1, 1, nx_, ny_ ), start, map, voronoi_map, dist_field, potential, true, true );
-                addExpansionCandidate ( start, current, current.offsetDist ( -1, -1, nx_, ny_ ), start, map, voronoi_map, dist_field, potential, true, true );
-                addExpansionCandidate ( start, current, current.offsetDist ( 1, -1, nx_, ny_ ), start, map, voronoi_map, dist_field, potential, true, true );
-            }
-
-            cycle++;
-        }
-
-        return candidates;
-    }
-
-
-
-    VoronoiExpansion::Index VoronoiExpansion::expandDijkstraToVoronoi ( Index start, Index end, int cycles, int8_t *map, int8_t *voronoi_map, float *dist_field, float *potential )
-    {
-        int cycle = 0;
-
-        Index current ( start.i, 0, 0, 0 );
-        potential[current.i] = 0;
-
-        //clear the queue
-        clearpq ( queue_ );
-        queue_.push ( current );
-
-        while ( !queue_.empty() && voronoi_map[current.i] >= 0 && cycle < cycles )
-        {
-            if ( queue_.empty() )
-                return Index ( -1, 0, 0, 0 );
-
-            current = queue_.top();
-            queue_.pop();
-
-            //If we have found a max potential return the pixel
-            if ( voronoi_map[current.i] < 0 )
-            {
-                potential[current.i] = current.potential;
-                return current;
-            }
-
-
-            addExpansionCandidate ( start, current, current.offsetDist ( 1, 0, nx_, ny_ ), end, map, voronoi_map, dist_field, potential, false, true );
-            addExpansionCandidate ( start, current, current.offsetDist ( 0, 1, nx_, ny_ ), end, map, voronoi_map, dist_field, potential, false, true );
-            addExpansionCandidate ( start, current, current.offsetDist ( -1, 0, nx_, ny_ ), end, map, voronoi_map, dist_field, potential, false, true );
-            addExpansionCandidate ( start, current, current.offsetDist ( 0, -1, nx_, ny_ ), end, map, voronoi_map, dist_field, potential, false, true );
-
-            cycle++;
-        }
-
-        if ( cycle >= cycles )
-            return Index ( -1, -1, -1, -1 );
-        else
-            return start;
-    }
-
-
-    VoronoiExpansion::Index VoronoiExpansion::expandToEnd ( Index start, Index end, int cycles, int8_t *map, int8_t *voronoi_map, float *distance_map, float *potential )
-    {
-        int cycle = 0;
-
-        Index current ( start.i, potential[start.i], 0, potential[start.i] );
-
-        //clear the queue
-        clearpq ( queue_ );
-        queue_.push ( current );
-
-        while ( !queue_.empty() && current.i != end.i && cycle < cycles )
-        {
-            if ( queue_.empty() )
-                return Index ( -1, 0, 0, 0 );
-
-            current = queue_.top();
-            queue_.pop();
-
-            //If we have found a max potential return the pixel
-            if ( current.i == end.i )
-            {
-                potential[current.i] = current.potential;
-                return current;
-            }
-
-
-            addExpansionCandidate ( start, current, current.offsetDist ( 1, 0, nx_, ny_ ), end, map, voronoi_map, distance_map, potential, false, false );
-            addExpansionCandidate ( start, current, current.offsetDist ( 0, 1, nx_, ny_ ), end, map, voronoi_map, distance_map, potential, false, false );
-            addExpansionCandidate ( start, current, current.offsetDist ( -1, 0, nx_, ny_ ), end, map, voronoi_map, distance_map, potential, false, false );
-            addExpansionCandidate ( start, current, current.offsetDist ( 0, -1, nx_, ny_ ), end, map, voronoi_map, distance_map, potential, false, false );
-
-            cycle++;
-        }
-
-        if ( cycle >= cycles )
-            return Index ( -1, -1, -1, -1 );
-        else
-            return start;
-
-    }
-
-    void VoronoiExpansion::addExpansionCandidate ( Index start, Index current, Index next, Index end, int8_t *map, int8_t *voronoi_map, float *dist_field, float *potential, bool expand_on_voronoi, bool expand_dijkstra_to_voronoi )
-    {
-        float potentialPrev = potential[current.i];
-
-        //Check Boundries
-        if ( next.i < 0 || next.i > ns_ )
-            return;
-
-        //Dont update allready found potentials
-        if ( potential[next.i] < POT_HIGH )
-            return;
-
-        if ( map[next.i] > 0 )
-            return;
-
-        if ( expand_on_voronoi )
-        {
-            if ( voronoi_map[next.i] >= 0 )     //If not on voronoi graph return
-                return;
-        }
-
-        float pot = 0;
-        float dist = 0;
-        float weight = 0;
-
-        if ( expand_dijkstra_to_voronoi )
-        {
-            pot = potentialPrev + neutral_cost_;
-            weight = -dist_field[next.i];       //Set wait to prefer higher potentials
-        }
-        else
-        {
-            int start_x = start.i % nx_;
-            int start_y = start.i / ny_;
-            int end_x = end.i % nx_;
-            int end_y = end.i / ny_;
-            int next_x = next.i % nx_;
-            int next_y = next.i / nx_;
-
-            dist = sqrt ( ( start_x - next_x ) * ( start_x - next_x ) + ( start_y - next_y ) * ( start_y - next_y ) ) * neutral_cost_;
-            pot = potentialPrev + hx_->CalcCosts ( next_x, next_y, start_x, start_y, end_x, end_y, current.dist, neutral_cost_, false );
-            float h = hx_->CalcHeuristic ( next_x, next_y, start_x, start_y, end_x, end_y, neutral_cost_ );
-            weight = pot + h;
-        }
-
-        if ( expand_dijkstra_to_voronoi && expand_on_voronoi )
-        {
-            potential[next.i] = pot;
-        }
-        else if ( expand_dijkstra_to_voronoi )
-        {
-            if ( voronoi_map[next.i] >= 0 )
-                potential[next.i] = pot;
-            else
-            {
-                weight = - dist_field[next.i]; //to move up pixel in queue
-            }
-        }
-        else
-        {
-            if ( next.i != end.i )
-                potential[next.i] = pot;
-            else
-            {
-                weight = 0; //to move up pixel in queue
-            }
-        }
-
-        queue_.push ( Index ( next.i, weight, dist, pot ) );
-
-    }
-
-    VoronoiExpansion::Index VoronoiExpansion::expandVoronoi ( Index start, Index end, int cycles, int8_t *map, int8_t *voronoi_map, float *distance_map, float *potential )
-    {
-        int cycle = 0;
-
-        Index current ( start.i, potential[start.i], 0, potential[start.i] );
-
-        //clear the queue
-        clearpq ( queue_ );
-        queue_.push ( current );
-
-
-        while ( !queue_.empty()  && cycle < cycles && !isEndpoint ( current ) ) //&& !isInGoalZone(current.i)
-        {
-            if ( queue_.empty() )
-                return Index ( -1, 0, 0, 0 );
-
-            current = queue_.top();
-            queue_.pop();
-
-            //If we have found a max potential return the pixel
-            if ( isEndpoint ( current ) )
-            {
-                potential[current.i] = current.potential;
-                return current;
-            }
-
-
-            addExpansionCandidate ( start, current, current.offsetDist ( 1, 0, nx_, ny_ ), end, map, voronoi_map, distance_map, potential, true, false );
-            addExpansionCandidate ( start, current, current.offsetDist ( 0, 1, nx_, ny_ ), end, map, voronoi_map, distance_map, potential, true, false );
-            addExpansionCandidate ( start, current, current.offsetDist ( -1, 0, nx_, ny_ ), end, map, voronoi_map, distance_map, potential, true, false );
-            addExpansionCandidate ( start, current, current.offsetDist ( 0, -1, nx_, ny_ ), end, map, voronoi_map, distance_map, potential, true, false );
-
-            addExpansionCandidate ( start, current, current.offsetDist ( 1, 1, nx_, ny_ ), end, map, voronoi_map, distance_map, potential, true, false );
-            addExpansionCandidate ( start, current, current.offsetDist ( -1, 1, nx_, ny_ ), end, map, voronoi_map, distance_map, potential, true, false );
-            addExpansionCandidate ( start, current, current.offsetDist ( -1, -1, nx_, ny_ ), end, map, voronoi_map, distance_map, potential, true, false );
-            addExpansionCandidate ( start, current, current.offsetDist ( 1, -1, nx_, ny_ ), end, map, voronoi_map, distance_map, potential, true, false );
-            cycle++;
-        }
-
-        if ( cycle >= cycles )
-            return Index ( -1, -1, -1, -1 );
-        else
-            return end;
-
-    }
-
-
-    bool VoronoiExpansion::isEndpoint ( VoronoiExpansion::Index p )
-    {
-        for ( std::list<Index>::iterator it = endpoints_.begin(); it != endpoints_.end(); ++it )
-        {
-            if ( p.i == it->i )
-                return true;
-        }
-
-        return false;
-    }
-
-    void global_planner::VoronoiExpansion::setNewMap ( cv::Mat _map, Eigen::Vector2d _origin, float _resoltuion, int _optimization )
-    {
-        ROS_INFO ( "debug got map" );
-        size_t new_hash = getHash ( _map, _origin, _resoltuion );
-
-        if ( currentHash_ != new_hash )
-        {
-            ROS_INFO ( "Global Planner: Computing distance field ..." );
-            origin_[0] = _origin[0];
-            origin_[1] = _origin[1];
-            resolution_ = _resoltuion;
-
-            prepareMap ( _map, map_, _optimization );
-            computeDistanceField ( map_, distfield_ );
-
-            ROS_INFO ( "Global Planner: Computing voronoi graph ..." );
-            computeVoronoiMap ( distfield_, voronoi_ );
-            currentHash_ = new_hash;
-        }
-
-        gotMap_ = true;
-    }
-
-    std::size_t VoronoiExpansion::getHash ( const cv::Mat &_map, Eigen::Vector2d _origin, float _resolution )
-    {
-        std::size_t seed = 0;
-
-        boost::hash_combine ( seed, _origin[0] );
-        boost::hash_combine ( seed, _origin[1] );
-        boost::hash_combine ( seed, _resolution );
-
-        for ( int i = 0; i < _map.cols * _map.rows; i++ )
-        {
-            int val = _map.data[i];
-            boost::hash_combine ( seed, val );
-        }
-
-        return seed;
-    }
-    
-    
-    void VoronoiExpansion::getVoronoi ( cv::Mat &v_map )
-    {
-        v_map = voronoi_;
-    };
+    addExpansionCandidate(start, current, current.offsetDist(1, 0, nx_, ny_), end, map, voronoi_map, distance_map,
+                          potential, true, false);
+    addExpansionCandidate(start, current, current.offsetDist(0, 1, nx_, ny_), end, map, voronoi_map, distance_map,
+                          potential, true, false);
+    addExpansionCandidate(start, current, current.offsetDist(-1, 0, nx_, ny_), end, map, voronoi_map, distance_map,
+                          potential, true, false);
+    addExpansionCandidate(start, current, current.offsetDist(0, -1, nx_, ny_), end, map, voronoi_map, distance_map,
+                          potential, true, false);
+
+    addExpansionCandidate(start, current, current.offsetDist(1, 1, nx_, ny_), end, map, voronoi_map, distance_map,
+                          potential, true, false);
+    addExpansionCandidate(start, current, current.offsetDist(-1, 1, nx_, ny_), end, map, voronoi_map, distance_map,
+                          potential, true, false);
+    addExpansionCandidate(start, current, current.offsetDist(-1, -1, nx_, ny_), end, map, voronoi_map, distance_map,
+                          potential, true, false);
+    addExpansionCandidate(start, current, current.offsetDist(1, -1, nx_, ny_), end, map, voronoi_map, distance_map,
+                          potential, true, false);
+    cycle++;
+  }
+
+  if (cycle >= cycles)
+    return Index(-1, -1, -1, -1);
+  else
+    return end;
+}
+
+bool VoronoiExpansion::isEndpoint(VoronoiExpansion::Index p)
+{
+  for (std::list<Index>::iterator it = endpoints_.begin(); it != endpoints_.end(); ++it)
+  {
+    if (p.i == it->i)
+      return true;
+  }
+
+  return false;
+}
+
+void global_planner::VoronoiExpansion::setNewMap(cv::Mat _map, Eigen::Vector2d _origin, float _resoltuion,
+                                                 int _optimization)
+{
+  ROS_INFO("debug got map");
+  size_t new_hash = getHash(_map, _origin, _resoltuion);
+
+  if (currentHash_ != new_hash)
+  {
+    ROS_INFO("Global Planner: Computing distance field ...");
+    origin_[0] = _origin[0];
+    origin_[1] = _origin[1];
+    resolution_ = _resoltuion;
+
+    prepareMap(_map, map_, _optimization);
+    computeDistanceField(map_, distfield_);
+
+    ROS_INFO("Global Planner: Computing voronoi graph ...");
+    computeVoronoiMap(distfield_, voronoi_);
+    currentHash_ = new_hash;
+  }
+
+  gotMap_ = true;
+}
+
+std::size_t VoronoiExpansion::getHash(const cv::Mat &_map, Eigen::Vector2d _origin, float _resolution)
+{
+  std::size_t seed = 0;
+
+  boost::hash_combine(seed, _origin[0]);
+  boost::hash_combine(seed, _origin[1]);
+  boost::hash_combine(seed, _resolution);
+
+  for (int i = 0; i < _map.cols * _map.rows; i++)
+  {
+    int val = _map.data[i];
+    boost::hash_combine(seed, val);
+  }
+
+  return seed;
+}
+
+void VoronoiExpansion::getVoronoi(cv::Mat &v_map)
+{
+  v_map = voronoi_;
+};
 }

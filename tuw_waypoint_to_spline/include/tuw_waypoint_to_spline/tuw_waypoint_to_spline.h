@@ -30,25 +30,31 @@
  *   POSSIBILITY OF SUCH DAMAGE.                                           *
  ***************************************************************************/
 
-
 #ifndef TUW_PATH_TO_SPLINE_H
 #define TUW_PATH_TO_SPLINE_H
 
 #include <memory>
 #include <unsupported/Eigen/Splines>
 
+namespace tuw
+{
+class Waypoint2Spline
+{
+public:
+  void fitSpline();
 
-namespace tuw {
-  
-class Waypoint2Spline {
-    public   : void fitSpline (); 
-    protected: std::shared_ptr<Eigen::Spline3d> spline_;
-    protected: std::shared_ptr<Eigen::Spline2d> splineXY_;
-    protected: std::vector<double> points_[3];
-    protected: std::vector<double> derivatives_[3];
+protected:
+  std::shared_ptr<Eigen::Spline3d> spline_;
+
+protected:
+  std::shared_ptr<Eigen::Spline2d> splineXY_;
+
+protected:
+  std::vector<double> points_[3];
+
+protected:
+  std::vector<double> derivatives_[3];
 };
-    
 }
 
-#endif // TUW_PATH_TO_SPLINE_H
-
+#endif  // TUW_PATH_TO_SPLINE_H

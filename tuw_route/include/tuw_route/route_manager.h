@@ -30,7 +30,6 @@
  *   POSSIBILITY OF SUCH DAMAGE.                                           *
  ***************************************************************************/
 
-
 #ifndef ROUTE_MANAGER_H
 #define ROUTE_MANAGER_H
 
@@ -38,39 +37,70 @@
 
 #include <tuw_route/route.h>
 
-
-namespace tuw {
-
+namespace tuw
+{
 class RouteManager;
-using RouteManagerPtr      = std::shared_ptr<       RouteManager >;
-using RouteManagerConstPtr = std::shared_ptr< const RouteManager >;
+using RouteManagerPtr = std::shared_ptr<RouteManager>;
+using RouteManagerConstPtr = std::shared_ptr<const RouteManager>;
 
-class RouteManager : public Route {
-public:   
-    //special class member functions
-    public   : RouteManager           ();
-    public   : virtual ~RouteManager  ()                    = default;
-    public   : RouteManager           (const RouteManager&) = default;
-    public   : RouteManager& operator=(const RouteManager&) = default;
-    public   : RouteManager           (RouteManager&&)      = default;
-    public   : RouteManager& operator=(RouteManager&&)      = default;
-    
-    public   : void loadRoute                       (const std::vector<Pose2D>& _pointsSeq);
-    public   : void update                          ( const Pose2D& _agentPose, const bool& _keepLast = false );
-    public   : void computeWaypointsDistanceToGoal  ();
-    
-    public   : double routeWaypointSampleDist_;
-    public   : double routeMaxDeviation_;
-    public   : double waypointActiveArcLen_;
-    public   : double visitedWaypointMinDAngle_;    
+class RouteManager : public Route
+{
+public:
+  // special class member functions
+public:
+  RouteManager();
 
-    /** updates the state of all the loaded waypoints */
-    private  : void updateWaypoints(const bool& _keepLast = false);
-    
-    private  : Pose2D agentPose_;
+public:
+  virtual ~RouteManager() = default;
+
+public:
+  RouteManager(const RouteManager&) = default;
+
+public:
+  RouteManager& operator=(const RouteManager&) = default;
+
+public:
+  RouteManager(RouteManager&&) = default;
+
+public:
+  RouteManager& operator=(RouteManager&&) = default;
+
+public:
+  void loadRoute(const std::vector<Pose2D>& _pointsSeq);
+
+public:
+  void update(const Pose2D& _agentPose, const bool& _keepLast = false);
+
+public:
+  void computeWaypointsDistanceToGoal();
+
+public:
+  void pauseCurrentRoute();
+
+public:
+  void resumeCurrentRoute();
+
+public:
+  Pose2D agentPose();
+
+public:
+  double routeWaypointSampleDist_;
+
+public:
+  double routeMaxDeviation_;
+
+public:
+  double waypointActiveArcLen_;
+
+public:
+  double visitedWaypointMinDAngle_;
+
+  /** updates the state of all the loaded waypoints */
+private:
+  void updateWaypoints(const bool& _keepLast = false);
+
+private:
+  Pose2D agentPose_;
 };
-
 }
-#endif // ROUTE_MANAGER_H
-
-
+#endif  // ROUTE_MANAGER_H

@@ -44,38 +44,46 @@
 #include <vector>
 #include <algorithm>
 
-namespace global_planner {
+namespace global_planner
+{
+class AStarTuwExpansion : public Expander
+{
+public:
+  AStarTuwExpansion(PotentialCalculator* p_calc, int nx, int ny, Heuristics* hx);
+  bool calculatePotentials(unsigned char* costs, double start_x, double start_y, double end_x, double end_y, int cycles,
+                           float* potential);
 
-class AStarTuwExpansion : public Expander {
-    public:
-        AStarTuwExpansion(PotentialCalculator* p_calc, int nx, int ny, Heuristics *hx);
-        bool calculatePotentials(unsigned char* costs, double start_x, double start_y, double end_x, double end_y, int cycles,
-                                float* potential);
-    private:
-        template <class T, class S, class C>
-        void clearpq(std::priority_queue<T, S, C>& q){
-            q=std::priority_queue<T, S, C>();
-        }
-        class Index {
-            public:
-                Index(int a, float b, float c) {
-                    i = a;
-                    cost = b;
-		    dist = c;
-                }
-                int i;
-                float cost;
-		float dist;
-        };
+private:
+  template <class T, class S, class C>
+  void clearpq(std::priority_queue<T, S, C>& q)
+  {
+    q = std::priority_queue<T, S, C>();
+  }
+  class Index
+  {
+  public:
+    Index(int a, float b, float c)
+    {
+      i = a;
+      cost = b;
+      dist = c;
+    }
+    int i;
+    float cost;
+    float dist;
+  };
 
-        struct greater1 {
-                bool operator()(const Index& a, const Index& b) const {
-                    return a.cost > b.cost;
-                }
-        };
-        void calcPotentialAndAddCandidate(unsigned char* costs, float* potential, Index lastNode, int index, int end_x, int end_y, int start_x, int start_y, bool diogonal);
-        std::priority_queue<Index, std::vector<Index>, greater1> queue_;
-	Heuristics *hx_;
-    };
-} //end namespace global_planner
+  struct greater1
+  {
+    bool operator()(const Index& a, const Index& b) const
+    {
+      return a.cost > b.cost;
+    }
+  };
+  void calcPotentialAndAddCandidate(unsigned char* costs, float* potential, Index lastNode, int index, int end_x,
+                                    int end_y, int start_x, int start_y, bool diogonal);
+  std::priority_queue<Index, std::vector<Index>, greater1> queue_;
+  Heuristics* hx_;
+};
+}  // end namespace global_planner
 #endif
