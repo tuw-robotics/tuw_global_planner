@@ -1,11 +1,8 @@
-# tuw_path_planning
+# tuw_global_planner
 This module holds modified clone of the global planner used in ros navigation of https://github.com/ros-planning/navigation.git 
-## tuw_path_planning
-This is just the metapackage
 ## global_planner
-This pkg implements a voronoi planner to route a single vehicle along a generated voronoi graph. 
-    The voronoi graph is generated based on the received map message. 
-    Thanks goes to the ROS move_base comunity because this pkg holds a copy of the global_planner used in move_base https://github.com/ros-planning/navigation.git. 
+This pkg implements a voronoi planner to route a single vehicle along a generated voronoi graph.  The voronoi graph is generated based on the received map message. 
+Thanks goes to the ROS move_base comunity because this pkg holds a copy of the global_planner used in move_base https://github.com/ros-planning/navigation.git. 
 ## tuw_waypoint_to_spline
 converts a point array with chassis orientation into a spline functions with knots and control points
 ### parameters
