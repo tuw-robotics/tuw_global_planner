@@ -1,15 +1,14 @@
 <package>
   <name>global_planner</name>
-  <version>1.14.0</version>
+  <version>0.0.0</version>
   <description>
-     A path planner library and node.
+    This pkg implements a voronoi planner to route a single vehicle along a generated voronoi graph. 
+    The voronoi graph is generated based on the received map message. 
+    Thanks goes to the ROS move_base comunity because this pkg holds a copy of the global_planner used in move_base https://github.com/ros-planning/navigation.git.
   </description>
-  <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
-  <maintainer email="mferguson@fetchrobotics.com">Michael Ferguson</maintainer>
+  <maintainer email="markus.bader@tuwien.ac.at">Markus Bader</maintainer>
+  <author email="benjamin.binder@tuwien.ac.at">Benjamin Binder</author>
   <license>BSD</license>
-
-  <author>David Lu!!</author>
-  <url>http://wiki.ros.org/global_planner</url>
 
   <buildtool_depend>catkin</buildtool_depend>
 
