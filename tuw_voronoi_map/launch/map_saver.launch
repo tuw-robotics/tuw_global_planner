@@ -1,7 +1,0 @@
-<launch>
-<group ns="p3dx">
-	<node pkg="tuw_voronoi_map" type="tuw_voronoi_saver" name="tuw_voronoi_saver" output="screen">
-		<param name="map_path" type="string" value="/home/benjamin/ros_workspace/src/tuw_utils/tuw_p3dx/cfg/voronoi_map_server/multi" />
-	</node>
-</group>
-</launch>
