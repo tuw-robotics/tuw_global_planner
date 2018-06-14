@@ -2,7 +2,7 @@
 <package format="2">
   <name>tuw_global_planner</name>
   <version>0.0.0</version>
-  <description>The tuw_global_planner metapackage package</description>
+  <description>The tuw_global_planner contains tool to plan robot paths for single robots. Where global_planner is a fork of the navigation::global_planner with an voronoi path planner and tuw_waypoints_to_spline converts waypoints (navigation stack) to a spline usable by a local planner.</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->

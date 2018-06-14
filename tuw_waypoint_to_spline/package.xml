@@ -2,7 +2,7 @@
 <package>
   <name>tuw_waypoint_to_spline</name>
   <version>0.0.0</version>
-  <description>The tuw_waypoint_to_spline package</description>
+  <description>converts a point array with chassis orientation into a spline functions with knots and control points</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
@@ -13,7 +13,7 @@
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>TODO</license>
+  <license>BSD</license>
 
 
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->

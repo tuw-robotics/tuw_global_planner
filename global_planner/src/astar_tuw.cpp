@@ -41,32 +41,14 @@
 
 namespace global_planner
 {
-/**
-* @brief Constructor which initializes the Expander
-* @param p_calc   The potential Calculator to generate the potetial for a specific point
-* @param xs       x size of the map
-* @param ys       y size of the map
-**/
-AStarTuwExpansion::AStarTuwExpansion(PotentialCalculator* p_calc, int xs, int ys, Heuristics* hx)
-  : Expander(p_calc, xs, ys)
+AStarTuwExpansion::AStarTuwExpansion(PotentialCalculator *p_calc, int xs, int ys, Heuristics *hx)
+    : Expander(p_calc, xs, ys)
 {
   hx_ = hx;
 }
 
-/**
-* @brief calculates the Potentials to the goal position and returns a potential Map
-* @param costs        Costs from paoint to Point (0 means empty, costmap_2d::COST_LETHAL means obstacle
-*costmap_2d::COST_INSCRIBED is the blured map -1 is no Information)
-* @param start_x s    tartx
-* @param start_y      starty
-* @param goal_x       goalx
-* @param goal_y       goalx
-* @param cycles       maximum of iterations
-* @param potential    the calculatet Potential map for return
-* @returns            success or not
-**/
-bool AStarTuwExpansion::calculatePotentials(unsigned char* costs, double start_x, double start_y, double end_x,
-                                            double end_y, int cycles, float* potential)
+bool AStarTuwExpansion::calculatePotentials(unsigned char *costs, double start_x, double start_y, double end_x,
+                                            double end_y, int cycles, float *potential)
 {
   int cycle = 0;
   // Calculate potential  Abort
@@ -123,7 +105,7 @@ bool AStarTuwExpansion::calculatePotentials(unsigned char* costs, double start_x
 /**ll
 Private helper
 **/
-void AStarTuwExpansion::calcPotentialAndAddCandidate(unsigned char* costs, float* potential, Index lastNode, int index,
+void AStarTuwExpansion::calcPotentialAndAddCandidate(unsigned char *costs, float *potential, Index lastNode, int index,
                                                      int end_x, int end_y, int start_x, int start_y, bool diagonal)
 {
   float potentialPrev = potential[lastNode.i];
@@ -153,4 +135,4 @@ void AStarTuwExpansion::calcPotentialAndAddCandidate(unsigned char* costs, float
 
   queue_.push(Index(index, potential[index] + h, dist_to_start));
 }
-}
+} // namespace global_planner

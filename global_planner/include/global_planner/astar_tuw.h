@@ -49,13 +49,33 @@ namespace global_planner
 class AStarTuwExpansion : public Expander
 {
 public:
-  AStarTuwExpansion(PotentialCalculator* p_calc, int nx, int ny, Heuristics* hx);
-  bool calculatePotentials(unsigned char* costs, double start_x, double start_y, double end_x, double end_y, int cycles,
-                           float* potential);
+  /**
+   * @brief Construct a new AStarTuwExpansion object
+   * 
+   * @param p_calc The potential Calculator to generate the potetial for a specific point
+   * @param nx x size of the map
+   * @param ny y size of the map
+   * @param hx the heuristic to estimate costs to the goal
+   */
+  AStarTuwExpansion(PotentialCalculator *p_calc, int nx, int ny, Heuristics *hx);
+  /**
+   * @brief calculates the potentials for a given map and a start to an end point using the A-Star expansion. The potentials can be found on the potential pointer.
+   * 
+   * @param costs Costs from point to point (0 means empty, costmap_2d::COST_LETHAL means obstacle costmap_2d::COST_INSCRIBED is the blured map -1 is no Information)
+   * @param start_x the x of start
+   * @param start_y the y coordinate of start
+   * @param end_x the x coordinate of end
+   * @param end_y the y coordinate of end
+   * @param cycles the maximum number of cycles used to find the end point
+   * @param potential the pointer to the potential map
+   * @return true if successful else false
+   */
+  bool calculatePotentials(unsigned char *costs, double start_x, double start_y, double end_x, double end_y, int cycles,
+                           float *potential);
 
 private:
   template <class T, class S, class C>
-  void clearpq(std::priority_queue<T, S, C>& q)
+  void clearpq(std::priority_queue<T, S, C> &q)
   {
     q = std::priority_queue<T, S, C>();
   }
@@ -75,15 +95,15 @@ private:
 
   struct greater1
   {
-    bool operator()(const Index& a, const Index& b) const
+    bool operator()(const Index &a, const Index &b) const
     {
       return a.cost > b.cost;
     }
   };
-  void calcPotentialAndAddCandidate(unsigned char* costs, float* potential, Index lastNode, int index, int end_x,
+  void calcPotentialAndAddCandidate(unsigned char *costs, float *potential, Index lastNode, int index, int end_x,
                                     int end_y, int start_x, int start_y, bool diogonal);
   std::priority_queue<Index, std::vector<Index>, greater1> queue_;
-  Heuristics* hx_;
+  Heuristics *hx_;
 };
-}  // end namespace global_planner
+} // end namespace global_planner
 #endif

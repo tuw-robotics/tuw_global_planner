@@ -14,10 +14,29 @@ class VoronoiPathGenerator
 {
 public:
   VoronoiPathGenerator();
-  void prepareMap(const cv::Mat& _map, cv::Mat& _smoothedMap, int blurSize);
-  void computeDistanceField(const cv::Mat& _map, cv::Mat& _distField);
-  void computeVoronoiMap(const cv::Mat& _distField, cv::Mat& _voronoiMap);
+  /**
+   * @brief Smoothes the map to get better voronoi graph results
+   * 
+   * @param _map 
+   * @param _smoothedMap 
+   * @param blurSize 
+   */
+  void prepareMap(const cv::Mat &_map, cv::Mat &_smoothedMap, int blurSize);
+  /**
+   * @brief computes the distance field of a map
+   * 
+   * @param _map 
+   * @param _distField 
+   */
+  void computeDistanceField(const cv::Mat &_map, cv::Mat &_distField);
+  /**
+   * @brief computes the voronoi map of a distance field.
+   * 
+   * @param _distField 
+   * @param _voronoiMap 
+   */
+  void computeVoronoiMap(const cv::Mat &_distField, cv::Mat &_voronoiMap);
 };
-}
+} // namespace global_planner
 
 #endif

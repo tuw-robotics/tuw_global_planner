@@ -2,9 +2,8 @@
   <name>global_planner</name>
   <version>0.0.0</version>
   <description>
-    This pkg implements a voronoi planner to route a single vehicle along a generated voronoi graph. 
-    The voronoi graph is generated based on the received map message. 
-    Thanks goes to the ROS move_base comunity because this pkg holds a copy of the global_planner used in move_base https://github.com/ros-planning/navigation.git.
+    This pkg implements a voronoi planner to route a single vehicle along a generated voronoi graph.  The voronoi graph is generated based on the received map message. 
+    Thanks goes to the ROS move_base comunity because this pkg holds a copy of the global_planner used in move_base https://github.com/ros-planning/navigation.git and extends it with a A-Star Planner with different Heuristics and a embedded Voronoi Graph Generator to replace the map with it.
   </description>
   <maintainer email="markus.bader@tuwien.ac.at">Markus Bader</maintainer>
   <author email="benjamin.binder@tuwien.ac.at">Benjamin Binder</author>
