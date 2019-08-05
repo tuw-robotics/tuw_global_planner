@@ -14,6 +14,8 @@ find_package(catkin REQUIRED
     pluginlib
     roscpp
     tf
+        tf2
+        tf2_ros
 )
 
 find_package(OpenCV REQUIRED)
@@ -35,6 +37,8 @@ catkin_package(
     pluginlib
     roscpp
     tf
+        tf2
+        tf2_ros
 )
 
 include_directories(
