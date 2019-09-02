@@ -47,15 +47,17 @@
   <build_depend>tf</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>tuw_nav_msgs</build_depend> 
-  <build_depend>yaml-cpp</build_depend> 
-  
+  <build_depend>yaml-cpp</build_depend>
+  <build_depend>message_generation</build_depend>
+
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>nav_msgs</run_depend>
   <run_depend>tf</run_depend>
   <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>tuw_nav_msgs</run_depend>
-  <run_depend>yaml-cpp</run_depend> 
+  <run_depend>yaml-cpp</run_depend>
+  <run_depend>message_runtime</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

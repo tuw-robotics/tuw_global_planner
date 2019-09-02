@@ -18,10 +18,14 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
 MESSAGE( STATUS "CMAKE_CXX_FLAGS_DEBUG:         " ${CMAKE_CXX_FLAGS_DEBUG} )
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
+
+
 find_package(catkin REQUIRED COMPONENTS 
     roscpp 
     rospy 
-    nav_msgs 
+    nav_msgs
+    message_generation
+    message_runtime
     dynamic_reconfigure 
     tf
     tuw_nav_msgs
@@ -30,12 +34,25 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Boost REQUIRED COMPONENTS thread)
 find_package(Eigen3 REQUIRED)
 
+## Generate services in the 'srv' folder
+add_service_files(DIRECTORY srv
+        FILES
+        PathToSpline.srv
+        )
+
+## Generate added messages and services with any dependencies listed here
+generate_messages(
+        DEPENDENCIES
+        nav_msgs
+        tuw_nav_msgs
+)
+
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES 
   tuw_path_to_spline
   tuw_path_to_spline_node
-  
+
   CATKIN_DEPENDS 
   roscpp 
   rospy 
@@ -56,7 +73,7 @@ target_link_libraries( tuw_waypoint_to_spline ${catkin_LIBRARIES})
 
 add_executable       ( tuw_waypoint_to_spline_node src/tuw_waypoint_to_spline_node.cpp )
 target_link_libraries( tuw_waypoint_to_spline_node tuw_waypoint_to_spline ${catkin_LIBRARIES} ${Boost_LIBRARIES}  yaml-cpp )
-
+add_dependencies(tuw_waypoint_to_spline_node tuw_waypoint_to_spline_gencpp)
 
 install(TARGETS 
   tuw_waypoint_to_spline 

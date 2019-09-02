@@ -38,6 +38,7 @@
 // ROS
 #include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
+#include "tuw_waypoint_to_spline/PathToSpline.h"
 #include <tuw_nav_msgs/Spline.h>
 #include <nav_msgs/Path.h>
 #include <tf/transform_listener.h>
@@ -47,11 +48,13 @@ namespace tuw
 /**
  * class to cover the ros communication
  **/
+
+
 class Waypoint2SplineNode : public Waypoint2Spline
 {
 public:
   Waypoint2SplineNode(ros::NodeHandle &n);  /// Constructor
-  void publishSpline();
+  void publishSpline(const tuw_nav_msgs::Spline& spline);
 
 private:
   ros::NodeHandle n_;             /// node handler to the root node
@@ -59,6 +62,7 @@ private:
   ros::Publisher pubSplineData_;  /// publisher for the motion commands
   ros::Subscriber sub_path_;      /// Subscriber to the laser measurements
   ros::Subscriber sub_path;       /// Subscriber to the laser measurements
+  ros::ServiceServer service_server;
 
 private:
   tf::TransformListener tf_listener_;
@@ -68,12 +72,15 @@ private:
   double min_waypoint_distance_;
   std::string path_tmp_file_;
   int minimum_number_of_points_;
+  bool pathToSplineCall(tuw_waypoint_to_spline::PathToSplineRequest& req, tuw_waypoint_to_spline::PathToSplineResponse& res);
 
   //     dynamic_reconfigure::Server<tuw_path_to_spline::Path2SplineNodeConfig> reconfigureServer_; /// parameter server
   //     stuff
   //     dynamic_reconfigure::Server<tuw_path_to_spline::Path2SplineNodeConfig>::CallbackType reconfigureFnc_;  ///
   //     parameter server stuff
   void callbackPath(const nav_msgs::Path &);  /// callback function to execute on path msg
+
+  tuw_nav_msgs::Spline pathToSpline(const nav_msgs::Path& path);
   void constructSplineFromFile(const std::string &file);
   tuw_nav_msgs::Spline constructSplineMsg();
 };
