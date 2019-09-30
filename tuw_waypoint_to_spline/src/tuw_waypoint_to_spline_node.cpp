@@ -258,7 +258,7 @@ void Waypoint2SplineNode::constructSplineFromFile(const std::string &file)
   }
 }
 
-bool Waypoint2SplineNode::pathToSplineCall(tuw_waypoint_to_spline::PathToSplineRequest &req, tuw_waypoint_to_spline::PathToSplineResponse &res) {
+bool Waypoint2SplineNode::pathToSplineCall(tuw_waypoint_to_spline_msgs::PathToSplineRequest &req, tuw_waypoint_to_spline_msgs::PathToSplineResponse &res) {
     try {
         res.spline = pathToSpline(req.path);
         return true;

@@ -38,7 +38,7 @@
 // ROS
 #include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
-#include "tuw_waypoint_to_spline/PathToSpline.h"
+#include <tuw_waypoint_to_spline_msgs/PathToSpline.h>
 #include <tuw_nav_msgs/Spline.h>
 #include <nav_msgs/Path.h>
 #include <tf/transform_listener.h>
@@ -72,7 +72,7 @@ private:
   double min_waypoint_distance_;
   std::string path_tmp_file_;
   int minimum_number_of_points_;
-  bool pathToSplineCall(tuw_waypoint_to_spline::PathToSplineRequest& req, tuw_waypoint_to_spline::PathToSplineResponse& res);
+  bool pathToSplineCall(tuw_waypoint_to_spline_msgs::PathToSplineRequest& req, tuw_waypoint_to_spline_msgs::PathToSplineResponse& res);
 
   //     dynamic_reconfigure::Server<tuw_path_to_spline::Path2SplineNodeConfig> reconfigureServer_; /// parameter server
   //     stuff

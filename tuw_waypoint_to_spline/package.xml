@@ -48,7 +48,7 @@
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>tuw_nav_msgs</build_depend> 
   <build_depend>yaml-cpp</build_depend>
-  <build_depend>message_generation</build_depend>
+  <build_depend>tuw_waypoint_to_spline_msgs</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
@@ -57,7 +57,7 @@
   <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>tuw_nav_msgs</run_depend>
   <run_depend>yaml-cpp</run_depend>
-  <run_depend>message_runtime</run_depend>
+  <run_depend>tuw_waypoint_to_spline_msgs</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
