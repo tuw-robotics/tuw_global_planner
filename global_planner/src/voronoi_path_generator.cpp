@@ -3,7 +3,8 @@
 #include <global_planner/voronoi_path_generator.h>
 #include <global_planner/thinning.h>
 #include <memory>
-#include <opencv/cv.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <queue>
 #include <string>
 
@@ -46,12 +47,12 @@ void VoronoiPathGenerator::prepareMap(const Mat& _map, Mat& _smoothedMap, int bl
   }
 
   cv::bitwise_not(srcMap, srcMap);
-  cv::threshold(srcMap, _smoothedMap, 10, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+  cv::threshold(srcMap, _smoothedMap, 10, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
 }
 
 void VoronoiPathGenerator::computeDistanceField(const cv::Mat& _map, cv::Mat& _distField)
 {
-  cv::distanceTransform(_map, _distField, CV_DIST_L2, 3);
+  cv::distanceTransform(_map, _distField, cv::DIST_L2, 3);
 }
 
 void VoronoiPathGenerator::computeVoronoiMap(const cv::Mat& _distField, cv::Mat& _voronoiMap)
@@ -60,7 +61,7 @@ void VoronoiPathGenerator::computeVoronoiMap(const cv::Mat& _distField, cv::Mat&
   srcMap.convertTo(_voronoiMap, CV_8UC1, 0.0);
 
   global_planner::greyscale_thinning(srcMap, _voronoiMap);
-  cv::threshold(_voronoiMap, _voronoiMap, 1, 255, CV_THRESH_BINARY);
+  cv::threshold(_voronoiMap, _voronoiMap, 1, 255, cv::THRESH_BINARY);
   global_planner::sceletonize(_voronoiMap, _voronoiMap);
 }
 }

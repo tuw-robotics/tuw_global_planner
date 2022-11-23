@@ -7,7 +7,7 @@
 #include <memory>
 #include <queue>
 #include <global_planner/voronoi_path_generator.h>
-#include <opencv/cv.h>
+#include <opencv2/core/core.hpp>
 
 namespace global_planner
 {
